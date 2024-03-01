@@ -1,17 +1,19 @@
 {
     // ===== Contract Description ===== //
     // Name: ErgoNames Reveal Contract
-    // Description: 
+    // Description: User reveals their ErgoName registration secret.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
     // ===== Box Contents ===== //
     // Tokens
-    // None
+    // 1. (PaymentTokenId, PaymentTokenAmount) // If ErgoName can be purchased with a custom token.
     // Registers
-    // R4: Coll[Byte]       CommitHash
+    // R4: Coll[Byte]       ErgoNameBytes
     // R5: GroupElement     BuyerPKGroupElement
-    // R6: Long             MinerFee
+    // R6: Coll[Byte]       CommitSecret
+    // R7: Coll[Byte]       CommitBoxId
+    // R8: Coll[Long]       Coll(MinerFee, TxOperatorFee, MinBoxValue)
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -20,14 +22,15 @@
     // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: None
     // 2. Refund
-    // Inputs: 
-    // Data Inputs:
-    // Outputs:
+    // Inputs: Reveal
+    // Data Inputs: None
+    // Outputs: BuyerPK, MinerFee
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
     // $registrySingletonTokenId: Coll[Byte]
     // $ergoNameIssuerContractBytes: Coll[Byte]
+    // $commitContractBytes: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // None
@@ -35,178 +38,156 @@
     // ===== Relevant Variables ===== //
     val buyerPKGroupElement: GroupElement = SELF.R5[GroupElement].get
     val buyerPKSigmaProp: SigmaProp = proveDlog(buyerPKGroupElement)
-    val minerFee: Long = SELF.R6[Long].get
+    val commitBoxId: Coll[Byte] = SELF.R7[Coll[Byte]].get
+    val minerFee: Long = SELF.R8[Coll[Long]].get(0)
+    val txOperatorFee: Long = SELF.R8[Coll[Long]].get(1)
+    val minBoxValue: Long = SELF.R8[Coll[Long]].get(2)
     val minerFeeErgoTreeBytes: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-
-    // ===== Mint ErgoName Tx ===== //
-    val validMintErgoNameTx: Boolean = {
-
-        // Inputs
-        val registryBoxIn: Box = INPUTS(0)
-
-        // Ouputs
-        val ergoNameIssuerBoxOut: Box = OUTPUTS(2)
-
-
-        val validSingletonTokenId: Boolean = {
-
-            (registryBoxIn.tokens(0)._1 == $registrySingletonTokenId)
-
-        }
-
-        val validErgonameIssuerBoxOut: Boolean = {
-
-            val validValue: Boolean = (ergoNameIssuerBoxOut.value >= SELF.value - minerFee)
-            val validContract: Boolean = (ergoNameIssuerBoxOut.propositionBytes = $ergoNameIssuerContractBytes)
-            val validBuyerPKGroupElement: Boolean = (ergoNameIssuerBoxOut.R4[GroupElement].get == buyerPKGroupElement)
-
-            allOf(Coll(
-                validValue,
-                validContract,
-                validBuyerPKGroupElement
-            ))
-
-        }
-
-        allOf(Coll(
-            validSingletonTokenId,
-            validErgonameIssuerBoxOut
-        ))
-
-    }
-
-    // ===== Refund Tx ===== //
-    val validRefundTx: Boolean = {
-
-        // Inputs
-        
-        // Outputs
-        val buyerPKBoxOut: Box = OUTPUTS(0)
-        val minerFeeBoxOut: Box = OUTPUTS(1)
-
-        val validBuyerPKBoxOut: Boolean = {
-
-            allOf(Coll(
-                (buyerPKBoxOut.value == SELF.value - minerFee),
-                (buyerPKBoxOut.propositionBytes == buyerPKSigmaProp.propBytes)
-            ))
-
-        }
-
-        val validMinerFee: Boolean = {
-
-            allOf(Coll(
-                (minerFeeBoxOut.value == minerFee),
-                (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes)
-            ))   
-
-        }
-
-        allOf(Coll(
-            validBuyerPKBoxOut,
-            validMinerFee
-        ))
-
-    }
-
-    sigmaProp(validMintErgoNameTx) || (sigmaProp(validRefundTx) && buyerPKSigmaProp)
-
-}
-
-{
-    // ===== Contract Description ===== //
-    // Name: ErgoNames Proxy Contract
-    // Description: This contract is a proxy contract and ensures funds are used properly
-    // Version: 1.0.0
-    // Author: zackbalbin@github.com
-    // Auditor: mgpai22@github.com
-
-    // ===== Box Registers ===== //
-    // R4: Coll[Byte] => name to register
-    // R5: SigmaProp => receiver sigmaProp
-    // R6: Coll[Byte] => commitment secret
-    // R7: Coll[Byte] => commitment box id
-
-    // ===== Compile Time Constants ===== //
-    // _singletonToken: Coll[Byte]
-    // _minerFee: Long //miner fee in nano ergs
-
-    // ===== Context Extension Variables ===== //
-    // None
-
-
-
-    val isRefund: Boolean = (INPUTS.size == 1)
-    val buyerPK: SigmaProp = SELF.R5[SigmaProp].get
+    val isPayingWithToken: Boolean = (SELF.tokens.size != 0)
+    val isRefund: Boolean = (OUTPUTS.size == 2)
 
     if (!isRefund) {
 
-        val validTx: Boolean = {
+        // ===== Mint ErgoName Tx ===== //
+        val validMintErgoNameTx: Boolean = {
 
-            // inputs
-            val registryInputBox = INPUTS(0)
+            // Inputs
+            val registryBoxIn: Box = INPUTS(0)
+            val commitBoxIn: Box = INPUTS(2)
 
-            // outputs
-            val tokenReceiverBox = OUTPUTS(0)
+            // Ouputs
+            val subNameRegistryBoxOut: Box = OUTPUTS(1)
+            val ergoNameIssuerBoxOut: Box = OUTPUTS(2)
+            val ergoNameFeeBoxOut: Box = OUTPUTS(3)
+            val minerFeeBoxOut: Box = OUTPUTS(4)
+            val txOperatorFeeBoxOut: Box = OUTPUTS(5)
 
-            val commitmentBoxId: Coll[Byte] = SELF.R7[Coll[Byte]].get
+            // Relevant Variables
+            val subNameRegistryAmount: Long = subNameRegistryBoxOut.value
+            val ergoNameIssuerAmount: Long = ergoNameIssuerBoxOut.value
+            val ergoNameFeeErgAmount: Long = if (!isPayingWithToken) ergoNameFeeBoxOut.value else 0L
+            val ergoNameFeeTokenAmount: Long  = if (isPayingWithToken) ergoNameFeeBoxOut.tokens(0)._2 else 0L
+            val minerFeeAmount: Long = minerFeeBoxOut.value
+            val txOperatorFeeAmount: Long = txOperatorFeeBoxOut.value - commitBoxIn.value
 
+            val validRegistrySingletonTokenId: Boolean = {
 
-            val validRecipient: Boolean = {
-                tokenReceiverBox.propositionBytes == buyerPK.propBytes
+                (registryBoxIn.tokens(0)._1 == $registrySingletonTokenId)
+
             }
 
-//            val validAmount: Boolean = {
-//                tokenReceiverBox.value == INPUTS(0).value
-//            }
+            val validRevealBoxInValue: Boolean = {
 
-            val validRegistryBox: Boolean = {
-                (registryInputBox.tokens(0)._1 == _singletonToken)
-            }
+                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuerAmount + ergoNameFeeErgAmount + minerFeeAmount + txOperatorFeeAmount),
+                val validTokenValue: Boolean = {
 
-            val validCommitmentBox: Boolean = {
-                (INPUTS(2).id == commitmentBoxId)
-            }
+                    if (isPayingWithToken) {
+                        (SELF.tokens(0)._2 == ergoNameFeeTokenAmount)
+                    } else {
+                        true
+                    }
 
-            allOf(Coll(
-                validRecipient,
-                validRegistryBox,
-                validCommitmentBox
-            ))
-
-        }
-
-        sigmaProp(validTx)
-
-    } else {
-
-        val validRefundTx: Boolean = {
-
-            // outputs
-            val refundBoxOUT: Boolean = OUTPUTS(0)
-            val minerBoxOUT: Box = OUTPUTS(1)
-
-            val validRefundBox: Boolean = {
+                }
 
                 allOf(Coll(
-                    (refundBoxOUT.value == SELF.value - _minerFee),
-                    (refundBoxOUT.propositionBytes == buyerPK.propBytes)
+                    validErgValue,
+                    validTokenValue
                 ))
 
             }
 
-            val validMinerFee: Boolean = (minerBoxOUT.value == _minerFee)
+            val validCommitBoxIn: Boolean = {
+
+                allOf(Coll(
+                    (commitBoxIn.id == commitBoxId),
+                    (commitBoxIn.propositionBytes == $commitContractBytes),
+                    (commitBoxIn.R5[GroupElement] == buyerPKGroupElement)
+                ))
+
+            }
+
+            val validSubNameRegistryAmount: Boolean = (subNameRegistryAmount == minBoxValue)
+
+            val validErgonameIssuerBoxOut: Boolean = {
+
+                val validValue: Boolean = (ergoNameIssuerAmount == 2 * minerFee)
+                val validContract: Boolean = (ergoNameIssuerBoxOut.propositionBytes = $ergoNameIssuerContractBytes)
+                val validBuyerPKGroupElement: Boolean = (ergoNameIssuerBoxOut.R4[GroupElement].get == buyerPKGroupElement)
+
+                allOf(Coll(
+                    validValue,
+                    validContract,
+                    validBuyerPKGroupElement
+                ))
+
+            }
+
+            val validMinerFeeBoxOut: Boolean = {
+
+                allOf(Coll(
+                    (minerFeeBoxOut.value == minerFee),
+                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes)
+                ))   
+
+            }
+
+            val validTxOperatorFeeBoxOut: Boolean = (txOperatorFeeBoxOut.value == txOperatorFeeAmount + commitBoxIn.value)
+            
+            allOf(Coll(
+                validRegistrySingletonTokenId,
+                validRevealBoxIn,
+                validCommitBoxIn,
+                validSubNameRegistryAmount,
+                validErgonameIssuerBoxOut,
+                validMinerFeeBoxOut,
+                validTxOperatorFeeBoxOut,
+                validErgonameIssuerBoxOut,
+                (OUTPUTS.size == 6)
+            ))
+
+        }
+
+        sigmaProp(validMintErgoNameTx)
+
+    } else {
+
+        // ===== Refund Tx ===== //
+        val validRefundTx: Boolean = {
+
+            // Inputs
+            
+            // Outputs
+            val buyerPKBoxOut: Box = OUTPUTS(0)
+            val minerFeeBoxOut: Box = OUTPUTS(1)
+
+            val validBuyerPKBoxOut: Boolean = {
+
+                allOf(Coll(
+                    (buyerPKBoxOut.value == SELF.value - minerFee),
+                    (buyerPKBoxOut.propositionBytes == buyerPKSigmaProp.propBytes)
+                ))
+
+            }
+
+            val validMinerFeeBoxOut: Boolean = {
+
+                allOf(Coll(
+                    (minerFeeBoxOut.value == minerFee),
+                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes)
+                ))   
+
+            }
 
             allOf(Coll(
-                validRefundBox,
-                validMinerFee,
+                validBuyerPKBoxOut,
+                validMinerFeeBoxOut,
                 (OUTPUTS.size == 2)
             ))
 
         }
 
-        sigmaProp(validRefundTx) && buyerPK // buyer must sign tx themself as well
+        sigmaProp(validRefundTx) && buyerPKSigmaProp
 
     }
-
+ 
 }
