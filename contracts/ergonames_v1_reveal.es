@@ -1,4 +1,5 @@
 {
+    // TODO: Enable buyer/receiver to be different :)
     // ===== Contract Description ===== //
     // Name: ErgoNames Reveal Contract
     // Description: User reveals their ErgoName registration secret.
@@ -70,12 +71,6 @@
             val minerFeeAmount: Long = minerFeeBoxOut.value
             val txOperatorFeeAmount: Long = txOperatorFeeBoxOut.value - commitBoxIn.value
 
-            val validRegistrySingletonTokenId: Boolean = {
-
-                (registryBoxIn.tokens(0)._1 == $registrySingletonTokenId)
-
-            }
-
             val validRevealBoxInValue: Boolean = {
 
                 val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuerAmount + ergoNameFeeErgAmount + minerFeeAmount + txOperatorFeeAmount),
@@ -108,25 +103,14 @@
 
             val validSubNameRegistryAmount: Boolean = (subNameRegistryAmount == minBoxValue)
 
-            val validErgonameIssuerBoxOut: Boolean = {
-
-                val validValue: Boolean = (ergoNameIssuerAmount == 2 * minerFee)
-                val validContract: Boolean = (ergoNameIssuerBoxOut.propositionBytes = $ergoNameIssuerContractBytes)
-                val validBuyerPKGroupElement: Boolean = (ergoNameIssuerBoxOut.R4[GroupElement].get == buyerPKGroupElement)
-
-                allOf(Coll(
-                    validValue,
-                    validContract,
-                    validBuyerPKGroupElement
-                ))
-
-            }
+            val validErgonameIssuerAmount: Boolean = (ergoNameIssuerAmount == 2 * minerFee)
 
             val validMinerFeeBoxOut: Boolean = {
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
-                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes)
+                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes),
+                    (minerFeeBoxOut.tokens.size == 0)
                 ))   
 
             }
@@ -134,11 +118,10 @@
             val validTxOperatorFeeBoxOut: Boolean = (txOperatorFeeBoxOut.value == txOperatorFeeAmount + commitBoxIn.value)
             
             allOf(Coll(
-                validRegistrySingletonTokenId,
                 validRevealBoxIn,
                 validCommitBoxIn,
                 validSubNameRegistryAmount,
-                validErgonameIssuerBoxOut,
+                validErgonameIssuerAmount,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
                 validErgonameIssuerBoxOut,
