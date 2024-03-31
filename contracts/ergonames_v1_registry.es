@@ -28,6 +28,7 @@
     // $ergoNameFeeContractBytes: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $sigUsdOracleSingletonTokenId: Coll[Byte]
+    // $ergonameMultiSigSigmaProp: SigmaProp
 
     // ===== Context Variables (_) ===== //
     // _ergoNameHash: Coll[Byte]    - Hash of the ErgoName to register
@@ -297,6 +298,6 @@
 
     }
 
-    sigmaProp(validMintErgoNameTx) || atLeast(3, Coll(pk1, pk2, pk3, pk4))
+    sigmaProp(validMintErgoNameTx) || $ergonameMultiSigSigmaProp
     
 }
