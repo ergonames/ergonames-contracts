@@ -18,7 +18,7 @@
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
     // Inputs: Registry, Reveal, Commit
-    // Data Inputs: ErgoDexErg2SigUsd, ?ErgoDexErg2Token, ?Config
+    // Data Inputs: SigUsdOracle, ?ErgoDexErg2Token, ?Config
     // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: None
 
@@ -27,7 +27,7 @@
     // $ergoNameIssuerContractBytes: Coll[Byte]
     // $ergoNameFeeContractBytes: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
-    // $ergoDexErgSigUsdPoolId: Coll[Byte]
+    // $sigUsdOracleSingletonTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _ergoNameHash: Coll[Byte]    - Hash of the ErgoName to register
@@ -39,14 +39,14 @@
     // def isValidAscii: (Coll[Byte] => Boolean)
 
     // ===== Relevant Variables ===== //
-    val prevRegistry: AvlTree = SELF.R4[AvlTree].get
-    val previousState: (Coll[Byte], Long) = SELF.R5[(Coll[Byte], Long)].get
-    val ageThreshold: (Int, Int) = SELF.R6[(Int, Int)].get
-    val priceMap: Coll[BigInt] = SELF.R7[Coll[BigInt]].get
-    val minCommitBoxAge: Int = ageThreshold._1
-    val maxCommitBoxAge: Int = ageThreshold._2
+    val prevRegistry: AvlTree               = SELF.R4[AvlTree].get
+    val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
+    val ageThreshold: (Int, Int)            = SELF.R6[(Int, Int)].get
+    val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get
+    val minCommitBoxAge: Int                = ageThreshold._1
+    val maxCommitBoxAge: Int                = ageThreshold._2
 
-    val _ergoNameHash: Coll[Byte] = getVar[Coll[Byte]](0).get
+    val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](0).get
     val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
 
     val isDefaultPaymentMode: Boolean = (CONTEXT.dataInputs.size == 1)
@@ -57,14 +57,14 @@
     val pk4: SigmaProp = PK("")
 
     // ===== User-Defined Functions ===== //
-    def calcUsdPriceInCents(charsAndMap: (Coll[Byte], Coll[BigInt])): BigInt = {
+    def calcUsdPrice(charsAndMap: (Coll[Byte], Coll[BigInt])): BigInt = {
         
         // We assume the input can be interpreted as a valid ascii char byte collection.
         
-        // USD price map in cents, collection index is the amount of chars.
-        val chars: Coll[Byte] = charsAndMap._1
-        val priceMap: Coll[BigInt] = charsAndMap._2
-        val supremum: Int = (priceMap.size - 1)
+        // USD price map in dollars, price map collection index is the amount of chars.
+        val chars: Coll[Byte]       = charsAndMap._1
+        val priceMap: Coll[BigInt]  = charsAndMap._2
+        val supremum: Int           = (priceMap.size - 1)
         
         if (chars.size <= supremum) {
             priceMap(chars.size)
@@ -78,22 +78,22 @@
 
         // We assume the input can be interpreted as a valid ascii char byte collection.
 
-        // Allowed ASCII characters (based on X.com handle format)
-        val zero: Byte = 48         // Numbers lower-bound
-        val nine: Byte = 57         // Numbers upper-bound
-        val A: Byte = 65            // Upper-case letters lower-bound
-        val Z: Byte = 90            // Upper-case letters upper-bound
-        val a: Byte = 97            // Lower-case letters lower-bound
-        val z: Byte = 122           // Lower-case letters upper-bound
-        val underscore: Byte = 95   // The only non-alphanumeric character allowed
+        // Allowed ASCII characters (based on x.com handle format)
+        val zero: Byte          = 48         // Numbers lower-bound
+        val nine: Byte          = 57         // Numbers upper-bound
+        val A: Byte             = 65         // Upper-case letters lower-bound
+        val Z: Byte             = 90         // Upper-case letters upper-bound
+        val a: Byte             = 97         // Lower-case letters lower-bound
+        val z: Byte             = 122        // Lower-case letters upper-bound
+        val underscore: Byte    = 95         // The only non-alphanumeric character allowed
 
         // All characters must be a digit, an uppercase letter, a lowercase letter, an underscore, or any combination thereof.
         chars.forall((char: Byte) => {
 
-            val isDigit: Boolean = (char >= zero && char <= nine)
-            val isUpperCaseLetter: Boolean = (char >= A && char <= Z)
-            val isLowerCaseLetter: Boolean = (char >= a && char <= z)
-            val isUnderscore: Boolena = (char == underscore)
+            val isDigit: Boolean            = (char >= zero && char <= nine)
+            val isUpperCaseLetter: Boolean  = (char >= A && char <= Z)
+            val isLowerCaseLetter: Boolean  = (char >= a && char <= z)
+            val isUnderscore: Boolean       = (char == underscore)
 
             (isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore)
 
@@ -109,23 +109,23 @@
         val commitBoxIn: Box = INPUTS(2)
 
         // Outputs
-        val registryBoxOut: Box = OUTPUTS(0)
-        val subNameRegistryBoxOut: Box = OUTPUTS(1)
-        val ergoNameIssuerBoxOut: Box = OUTPUTS(2)
-        val ergoNameFeeBoxOut: Box = OUTPUTS(3)
-        val minerFeeBoxOut: Box = OUTPUTS(4)
-        val txOperatorFeeBoxOut: Box = OUTPUTS(5)
+        val registryBoxOut: Box         = OUTPUTS(0)
+        val subNameRegistryBoxOut: Box  = OUTPUTS(1)
+        val ergoNameIssuerBoxOut: Box   = OUTPUTS(2)
+        val ergoNameFeeBoxOut: Box      = OUTPUTS(3)
+        val minerFeeBoxOut: Box         = OUTPUTS(4)
+        val txOperatorFeeBoxOut: Box    = OUTPUTS(5)
 
         // Relevant Variables
-        val ergoNameTokenId: Coll[Byte] = ergoNameIssuerBoxOut.id // Thus all ErgoName token ids will be unique.
+        val ergoNameTokenId: Coll[Byte]             = ergoNameIssuerBoxOut.id // Thus all ErgoName token ids will be unique.
         
-        val commitAge: Int = (HEIGHT - commitBoxIn.creationInfo._1)
-        val commitHash: Coll[Byte] = commitBoxIn.R4[Coll[Byte]].get
+        val commitAge: Int                          = (HEIGHT - commitBoxIn.creationInfo._1)
+        val commitHash: Coll[Byte]                  = commitBoxIn.R4[Coll[Byte]].get
 
-        val ergoNameBytes: Coll[Byte] = revealBoxIn.R4[Coll[Byte]].get
-        val receiverPKGroupElement: GroupElement = revealBoxIn.R5[GroupElement].get
-        val receiverPKSigmaProp: SigmaProp = proveDlog(receiverPKGroupElement)
-        val commitSecret: Coll[Byte] = revealBoxIn.R6[Coll[Byte]].get
+        val ergoNameBytes: Coll[Byte]               = revealBoxIn.R4[Coll[Byte]].get
+        val receiverPKGroupElement: GroupElement    = revealBoxIn.R5[GroupElement].get
+        val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
+        val commitSecret: Coll[Byte]                = revealBoxIn.R6[Coll[Byte]].get
 
         val validErgoNameFormat: Boolean = {
 
@@ -144,8 +144,8 @@
                 ergoNameBytes
             )
 
-            val validCommitAge: Boolean = (commitAge >= minCommitBoxAge) && (commitAge <= maxCommitBoxAge)
-            val validCalculatedHash: Boolean = (calculatedHash == commitHash)
+            val validCommitAge: Boolean         = (commitAge >= minCommitBoxAge) && (commitAge <= maxCommitBoxAge)
+            val validCalculatedHash: Boolean    = (calculatedHash == commitHash)
 
             allOf(Coll(
                 validCommitAge,
@@ -158,10 +158,10 @@
 
             val validStateUpdate: Boolean = {
                 
-                val newState: (Coll[Byte], Long) = registryBoxOut.R5[(Coll[Byte], Long)].get
+                val newState: (Coll[Byte], Long)        = registryBoxOut.R5[(Coll[Byte], Long)].get
 
                 val validErgoNameTokenIdUpdate: Boolean = (newState._1 == ergoNameTokenId)
-                val validIndexIncrement: Boolean = (newState._2 == previousState._2 + 1L)
+                val validIndexIncrement: Boolean        = (newState._2 == previousState._2 + 1L)
 
                 allOf(Coll(
                     validErgoNameTokenIdUpdate,
@@ -230,53 +230,52 @@
 
         val validErgoNameFeeBoxOut: Boolean = {
 
-            val ergoDexErg2SigUsdPoolBoxIn: Box = CONTEXT.dataInputs(0)
-            val nanoErgVolume: BigInt = ergoDexErgSigUsdPoolBoxIn.value
-            val sigUsdVolume: BigInt = ergoDexErgSigUsdPoolBoxIn.tokens(2)._2
-            val charsAndMap: (Coll[Byte], Coll[BigInt]) = (ergoNameBytes, priceMap)
-            val price: BigInt = calcUsdPriceInCents(charsAndMap)
-            val equivalentNanoErg: BigInt = (nanoErgVolume * price) / sigUsdVolume
+            val sigUsdOracleBoxIn: Box                      = CONTEXT.dataInputs(0)
+            val nanoErgPerUsd: Long                         = sigUsdOracleBoxIn.R4[Long].get
+            val oracleHeight: Long                          = sigUsdOracleBoxIn.R5[Int].get
+            val charsAndMap: (Coll[Byte], Coll[BigInt])     = (ergoNameBytes, priceMap)
+            val price: BigInt                               = calcUsdPrice(charsAndMap)
+            val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price)
+            val validSigUsdOracle: Boolean                  = (sigUsdOracleBoxIn.tokens(0)._1 == $sigUsdOracleSingletonTokenId)
 
             if (isDefaultPaymentMode) {
 
-                val validErgoDexErgSigUsdPool: Boolean = (ergoDexErgSigUsdPoolBoxIn.tokens(0)._1 == $ergoDexErgSigUsdPoolId)
                 val validFeePayment: Boolean = (ergoNameFeeBoxOut.value.toBigInt == equivalentNanoErg)
                 val validFeeAddress: Boolean = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)
 
                 allOf(Coll(
-                    validErgoDexErgSigUsdPool,
+                    validSigUsdOracle,
                     validFeePayment,
                     validFeeAddress
                 ))
 
             } else {
 
-                val ergoDexErg2TokenPoolBoxIn: Box = CONTEXT.dataInputs(1)
-                val configBoxIn: Box = CONTEXT.dataInputs(2)
+                val ergoDexErg2TokenPoolBoxIn: Box              = CONTEXT.dataInputs(1)
+                val configBoxIn: Box                            = CONTEXT.dataInputs(2)
 
-                val paymentTokenId: Coll[Byte] = revealBoxIn.tokens(0)._1 
-                val configAvlTree: AvlTree = configBoxIn.R4[AvlTree].get
-                val _lookupProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-                val configElement: Coll[Byte] = configAvlTree.get(paymentTokenId, _lookupProof)
+                val paymentTokenId: Coll[Byte]                  = revealBoxIn.tokens(0)._1 
+                val configAvlTree: AvlTree                      = configBoxIn.R4[AvlTree].get
+                val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](1).get
+                val configElement: Coll[Byte]                   = configAvlTree.get(paymentTokenId, _lookupProof)
                 
                 if (configElement.isEmpty) {
                     false
                 } else {
 
-                    val ergoDexErg2TokenPoolId: Coll[Byte] = configElement.get.slice(0, 32)
-                    val nanoErgVolume_2: BigInt = ergoDexErg2TokenPoolBoxIn.value
-                    val tokenVolume_2: BigInt = ergoDexErg2TokenPoolBoxIn.tokens(2)._2
-                    val equivalentPaymentTokenAmount: BigInt = (tokenVolume_2 * equivalentNanoErg) / nanoErgVolume_2
+                    val ergoDexErg2TokenPoolId: Coll[Byte]      = configElement.get.slice(0, 32)
+                    val nanoErgVolume_2: BigInt                 = ergoDexErg2TokenPoolBoxIn.value
+                    val tokenVolume_2: BigInt                   = ergoDexErg2TokenPoolBoxIn.tokens(2)._2
+                    val equivalentPaymentTokenAmount: BigInt    = (tokenVolume_2 * equivalentNanoErg) / nanoErgVolume_2
 
-                    val validConfigBoxIn: Boolean = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
-                    val validErgoDexErgSigUsdPool: Boolean = (ergoDexErgSigUsdPoolBoxIn.tokens(0)._1 == $ergoDexErgSigUsdPoolId)
-                    val validErgoDexErg2TokenPool: Boolean = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
-                    val validFeePayment: Boolean = (ergoNameFeeBoxOut.tokens(0)._1, ergoNameFeeBoxOut.tokens(0)._2.toBigInt == (paymentTokenId, equivalentPaymentTokenAmount))
-                    val validFeeAddress: Boolean = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)                    
+                    val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
+                    val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
+                    val validFeePayment: Boolean                = (ergoNameFeeBoxOut.tokens(0)._1, ergoNameFeeBoxOut.tokens(0)._2.toBigInt == (paymentTokenId, equivalentPaymentTokenAmount))
+                    val validFeeAddress: Boolean                = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)                    
 
                     allOf(Coll(
+                        validSigUsdOracle,
                         validConfigBoxIn,
-                        validErgoDexErgSigUsdPool,
                         validErgoDexErg2TokenPool,
                         validFeePayment,
                         validFeeAddress
