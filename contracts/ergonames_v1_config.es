@@ -20,12 +20,14 @@
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
-    // None
+    // $ergonameMultiSigSigmaProp: SigmaProp
 
     // ===== Context Variables (_) ===== //
     // None
 
     // ===== Relevant Variables ===== //
+    // None
 
+    $ergonameMultiSigSigmaProp
     
 }
