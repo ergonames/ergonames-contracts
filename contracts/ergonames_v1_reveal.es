@@ -29,8 +29,6 @@
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
-    // $registrySingletonTokenId: Coll[Byte]
-    // $ergoNameIssuerContractBytes: Coll[Byte]
     // $commitContractBytes: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
@@ -43,7 +41,7 @@
     val minerFee: Long = SELF.R8[Coll[Long]].get(0)
     val txOperatorFee: Long = SELF.R8[Coll[Long]].get(1)
     val minBoxValue: Long = SELF.R8[Coll[Long]].get(2)
-    val minerFeeErgoTreeBytes: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
+    val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val isPayingWithToken: Boolean = (SELF.tokens.size != 0)
     val isRefund: Boolean = (OUTPUTS.size == 2)
 
@@ -109,14 +107,14 @@
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
-                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes),
+                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash),
                     (minerFeeBoxOut.tokens.size == 0)
-                ))   
+                ))
 
             }
 
             val validTxOperatorFeeBoxOut: Boolean = (txOperatorFeeBoxOut.value == txOperatorFeeAmount + commitBoxIn.value)
-            
+
             allOf(Coll(
                 validRevealBoxIn,
                 validCommitBoxIn,
@@ -138,7 +136,7 @@
         val validRefundTx: Boolean = {
 
             // Inputs
-            
+
             // Outputs
             val buyerPKBoxOut: Box = OUTPUTS(0)
             val minerFeeBoxOut: Box = OUTPUTS(1)
@@ -156,8 +154,8 @@
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
-                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes)
-                ))   
+                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
+                ))
 
             }
 
@@ -172,5 +170,5 @@
         sigmaProp(validRefundTx) && buyerPKSigmaProp
 
     }
- 
+
 }
