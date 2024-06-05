@@ -40,7 +40,7 @@
     // def isValidAscii: (Coll[Byte] => Boolean)
 
     // ===== Relevant Variables ===== //
-    val prevRegistry: AvlTree               = SELF.R4[AvlTree].get
+    val previousRegistry: AvlTree               = SELF.R4[AvlTree].get
     val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
     val ageThreshold: (Int, Int)            = SELF.R6[(Int, Int)].get
     val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get
@@ -59,21 +59,18 @@
 
         // USD price map in dollars, price map collection index is the amount of chars.
         val chars: Coll[Byte]       = charsAndMap._1
-        val priceMap: Coll[BigInt]  = charsAndMap._2
+        val priceMapInner: Coll[BigInt]  = charsAndMap._2
         val supremum: Int           = (priceMap.size - 1)
 
         if (chars.size <= supremum) {
-            priceMap(chars.size)
+            priceMapInner(chars.size)
         } else {
-            priceMap(supremum)
+            priceMapInner(supremum)
         }
 
     }
 
     def isValidAscii(chars: Coll[Byte]): Boolean = {
-
-        // We assume the input can be interpreted as a valid ascii char byte collection.
-
         // Allowed ASCII characters (based on x.com handle format)
         val zero: Byte          = 48         // Numbers lower-bound
         val nine: Byte          = 57         // Numbers upper-bound
@@ -84,17 +81,14 @@
         val underscore: Byte    = 95         // The only non-alphanumeric character allowed
 
         // All characters must be a digit, an uppercase letter, a lowercase letter, an underscore, or any combination thereof.
-        chars.forall((char: Byte) => {
+        chars.forall { (char: Byte) =>
+            val isDigit: Boolean            = char >= zero && char <= nine
+            val isUpperCaseLetter: Boolean  = char >= A && char <= Z
+            val isLowerCaseLetter: Boolean  = char >= a && char <= z
+            val isUnderscore: Boolean       = char == underscore
 
-            val isDigit: Boolean            = (char >= zero && char <= nine)
-            val isUpperCaseLetter: Boolean  = (char >= A && char <= Z)
-            val isLowerCaseLetter: Boolean  = (char >= a && char <= z)
-            val isUnderscore: Boolean       = (char == underscore)
-
-            (isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore)
-
-        })
-
+            isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore
+        }
     }
 
     // ===== Mint ErgoName Tx ===== //
@@ -199,7 +193,7 @@
             allOf(Coll(
                 (subNameRegistryBoxOut.propositionBytes == $subNameContractBytes),
                 (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                (subNameRegistryBoxOut.R5[Coll[Byte]] == ergoNameTokenId)
+                (subNameRegistryBoxOut.R5[Coll[Byte]].get == ergoNameTokenId)
             ))
 
         }
@@ -266,7 +260,7 @@
 
                     val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
                     val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
-                    val validFeePayment: Boolean                = (ergoNameFeeBoxOut.tokens(0)._1, ergoNameFeeBoxOut.tokens(0)._2.toBigInt == (paymentTokenId, equivalentPaymentTokenAmount))
+                    val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1, ergoNameFeeBoxOut.tokens(0)._2.toBigInt) == (paymentTokenId, equivalentPaymentTokenAmount))
                     val validFeeAddress: Boolean                = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)
 
                     allOf(Coll(
