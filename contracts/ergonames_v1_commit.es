@@ -27,10 +27,11 @@
 
     // ===== Compile Time Constants ($) ===== //
     // $registrySingletonTokenId: Coll[Byte]
-    // $ergoNameIssuerContractBytes: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // None
+
+    val minerFeeErgoTreeHash = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
 
     // ===== Relevant Variables ===== //
     val buyerPKGroupElement: GroupElement = SELF.R5[GroupElement].get
@@ -54,7 +55,7 @@
             }
 
             allOf(Coll(
-                validSingletonTokenId        
+                validSingletonTokenId
             ))
 
         }
@@ -67,7 +68,7 @@
         val validRefundTx: Boolean = {
 
             // Inputs
-            
+
             // Outputs
             val buyerPKBoxOut: Box = OUTPUTS(0)
             val minerFeeBoxOut: Box = OUTPUTS(1)
@@ -85,8 +86,8 @@
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
-                    (minerFeeBoxOut.propositionBytes == minerFeeErgoTreeBytes)
-                ))   
+                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
+                ))
 
             }
 
