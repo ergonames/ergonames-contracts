@@ -40,7 +40,7 @@
     // def isValidAscii: (Coll[Byte] => Boolean)
 
     // ===== Relevant Variables ===== //
-    val previousRegistry: AvlTree               = SELF.R4[AvlTree].get
+    val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
     val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
     val ageThreshold: (Int, Int)            = SELF.R6[(Int, Int)].get
     val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get
@@ -230,7 +230,7 @@
 
             if (isDefaultPaymentMode) {
 
-                val validFeePayment: Boolean = (ergoNameFeeBoxOut.value.toBigInt == equivalentNanoErg)
+                val validFeePayment: Boolean = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
                 val validFeeAddress: Boolean = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)
 
                 allOf(Coll(
@@ -260,7 +260,7 @@
 
                     val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
                     val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
-                    val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1, ergoNameFeeBoxOut.tokens(0)._2.toBigInt) == (paymentTokenId, equivalentPaymentTokenAmount))
+                    val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
                     val validFeeAddress: Boolean                = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)
 
                     allOf(Coll(
