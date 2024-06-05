@@ -71,7 +71,7 @@
 
             val validRevealBoxInValue: Boolean = {
 
-                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuerAmount + ergoNameFeeErgAmount + minerFeeAmount + txOperatorFeeAmount),
+                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuerAmount + ergoNameFeeErgAmount + minerFeeAmount + txOperatorFeeAmount)
                 val validTokenValue: Boolean = {
 
                     if (isPayingWithToken) {
@@ -94,7 +94,7 @@
                 allOf(Coll(
                     (commitBoxIn.id == commitBoxId),
                     (commitBoxIn.propositionBytes == $commitContractBytes),
-                    (commitBoxIn.R5[GroupElement] == buyerPKGroupElement)
+                    (commitBoxIn.R5[GroupElement].get == buyerPKGroupElement)
                 ))
 
             }
@@ -116,13 +116,13 @@
             val validTxOperatorFeeBoxOut: Boolean = (txOperatorFeeBoxOut.value == txOperatorFeeAmount + commitBoxIn.value)
 
             allOf(Coll(
-                validRevealBoxIn,
+                validRevealBoxInValue,
                 validCommitBoxIn,
                 validSubNameRegistryAmount,
                 validErgonameIssuerAmount,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
-                validErgonameIssuerBoxOut,
+                validErgonameIssuerAmount,
                 (OUTPUTS.size == 6)
             ))
 
