@@ -67,7 +67,7 @@
             val ergoNameFeeErgAmount: Long = if (!isPayingWithToken) ergoNameFeeBoxOut.value else 0L
             val ergoNameFeeTokenAmount: Long  = if (isPayingWithToken) ergoNameFeeBoxOut.tokens(0)._2 else 0L
             val minerFeeAmount: Long = minerFeeBoxOut.value
-            val txOperatorFeeAmount: Long = txOperatorFeeBoxOut.value - commitBoxIn.value
+            val txOperatorFeeAmount: Long = txOperatorFeeBoxOut.value
 
             val validRevealBoxInValue: Boolean = {
 
@@ -113,7 +113,14 @@
 
             }
 
-            val validTxOperatorFeeBoxOut: Boolean = (txOperatorFeeBoxOut.value == txOperatorFeeAmount + commitBoxIn.value)
+            val validTxOperatorFeeBoxOut: Boolean = {
+
+                allOf(Coll(
+                    (txOperatorFeeBoxOut.value == txOperatorFee),
+                    (txOperatorFee == commitBoxIn.value)
+                ))
+                
+            }
 
             allOf(Coll(
                 validRevealBoxInValue,
