@@ -58,9 +58,9 @@
         // We assume the input can be interpreted as a valid ascii char byte collection.
 
         // USD price map in dollars, price map collection index is the amount of chars.
-        val chars: Coll[Byte]       = charsAndMap._1
-        val priceMapInner: Coll[BigInt]  = charsAndMap._2
-        val supremum: Int           = (priceMap.size - 1)
+        val chars: Coll[Byte]               = charsAndMap._1
+        val priceMapInner: Coll[BigInt]     = charsAndMap._2
+        val supremum: Int                   = (priceMap.size - 1)
 
         if (chars.size <= supremum) {
             priceMapInner(chars.size)
@@ -186,7 +186,7 @@
 
         }
 
-        val validSubNameIssuerBoxOut: Boolean = {
+        val validSubNameRegistryBoxOut: Boolean = {
 
             val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
 
@@ -211,8 +211,7 @@
 
             allOf(Coll(
                 (ergoNameIssuerBoxOut.propositionBytes == $ergoNameIssuerContractBytes),
-                (ergoNameIssuerBoxOut.R4[GroupElement].get == receiverPKGroupElement),
-                (ergoNameIssuerBoxOut.R5[Coll[Byte]].get == ergoNameBytes),
+                (ergoNameIssuerBoxOut.R9[(GroupElement, Coll[Byte])].get == (receiverPKGroupElement, ergoNameBytes)),
                 validErgoNameCollectionTokenTransfer
             ))
 
@@ -281,7 +280,7 @@
             validErgoNameFormat,
             validCommit,
             validRegistryUpdate,
-            validSubNameIssuerBoxOut,
+            validSubNameRegistryBoxOut,
             validErgoNameIssuerBoxOut
         ))
 
