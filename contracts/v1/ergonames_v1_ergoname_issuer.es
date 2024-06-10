@@ -32,6 +32,7 @@
 
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
+    val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
     val receiverData: (GroupElement, Coll[Byte]) = SELF.R9[(GroupElement, Coll[Byte])].get
     val receiverGE: GroupElement = receiverData._1
@@ -48,7 +49,7 @@
             
             val validCollection: Boolean = ($ergoNameCollectionTokenId == _ergoNameCollectionIssuerBox.id)
             val validSelection: Boolean = (artworkCollectionTokenId == $ergoNameCollectionTokenId)
-            val validExistence: Boolean = SELF.tokens(0) == (artworkCollectionTokenId, 1L)
+            val validExistence: Boolean = (collectionTokenId, 1L) == (artworkCollectionTokenId, 1L)
 
             allOf(Coll(
                 validCollection,
@@ -68,6 +69,20 @@
 
         }
 
+        val validCollectionTokenBurn: Boolean = {
+
+            OUTPUTS.forall((output: Box) => {
+
+                output.tokens.forall((token: (Coll[Byte], Long)) => {
+
+                    (token._1 != collectionTokenId)
+
+                })
+
+            })
+
+        }
+
         val validMinerFeeBoxOut: Boolean = {
 
             allOf(Coll(
@@ -81,6 +96,7 @@
         allOf(Coll(
             validErgoNameCollection,
             validErgoNameMint,
+            validCollectionTokenBurn,
             validMinerFee
         ))
 
