@@ -20,7 +20,7 @@
     // Inputs: Registry, Reveal, Commit
     // Data Inputs: SigUsdOracle, ?ErgoDexErg2Token, ?Config
     // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
-    // Context Variables: None
+    // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
     // $subNameContractBytes: Coll[Byte]
@@ -31,7 +31,7 @@
     // $ergonameMultiSigSigmaProp: SigmaProp
 
     // ===== Context Variables (_) ===== //
-    // _ergoNameHash: Coll[Byte]    - Hash of the ErgoName to register
+    // _ergoNameHash: Coll[Byte]    - Hash of the ErgoName to register.
     // _insertionProof: Coll[Byte]  - Proof that the ErgoNameHash and ErgoNameTokenId were inserted into the registry avl tree.
     // _lookupProof: Coll[Byte]     - Proof for getting a value from the config avl tree.
 
@@ -192,8 +192,10 @@
 
             allOf(Coll(
                 (subNameRegistryBoxOut.propositionBytes == $subNameContractBytes),
+                (subNameRegistryBoxOut.tokens(0) == (SELF.id, 1L)),
                 (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                (subNameRegistryBoxOut.R5[Coll[Byte]].get == ergoNameTokenId)
+                (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
+                (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameTokenId)
             ))
 
         }
@@ -245,7 +247,7 @@
 
                 val paymentTokenId: Coll[Byte]                  = revealBoxIn.tokens(0)._1
                 val configAvlTree: AvlTree                      = configBoxIn.R4[AvlTree].get
-                val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](1).get
+                val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](2).get
                 val configElement: Coll[Byte]                   = configAvlTree.get(paymentTokenId, _lookupProof)
 
                 if (configElement.isEmpty) {
