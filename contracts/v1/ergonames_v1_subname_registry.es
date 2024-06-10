@@ -1,37 +1,29 @@
 {
     // ===== Contract Description ===== //
-    // Name: ErgoNames Registry Contract
-    // Description: Contract managing the minting and price calculation of user ErgoName.
+    // Name: ErgoNames Subname Registry Contract
+    // Description: Contract managing the minting of the ErgoName subname.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
     // ===== Box Contents ===== //
     // Tokens
-    // 1. (RegistrySingletonTokenId, 1L)
-    // 2. (ErgoNameCollectionTokenId, Long.MaxValue)
+    // 1. (SubNameRegistrySingletonTokenId, 1L)
     // Registers
     // R4: AvlTree              RegistryAvlTree
-    // R5: (Coll[Byte], Long)   PreviousState
-    // R6: (Int, Int)           AgeThreshold
-    // R7: Coll[BigInt]         PriceMap
+    // R5: Coll[Byte]           ErgoNameTokenId
 
     // ===== Relevant Transactions ===== //
-    // 1. Mint ErgoName
-    // Inputs: Registry, Reveal, Commit
-    // Data Inputs: SigUsdOracle, ?ErgoDexErg2Token, ?Config
-    // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
-    // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
+    // 1. Mint SubName
+    // Inputs: ParentSubNameRegistry, ChildSubnameRegistryNFT, ErgoNameNFT
+    // Data Inputs: None
+    // Outputs: ParentSubNameRegistry, ChildSubNameRegistry, SubNameNFT, ErgoNameNFT, MinerFee, TxOperatorFee
+    // Context Variables: SubNameHash, InerstionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
-    // $subNameContractBytes: Coll[Byte]
-    // $ergoNameIssuerContractBytes: Coll[Byte]
-    // $ergoNameFeeContractBytes: Coll[Byte]
-    // $configSingletonTokenId: Coll[Byte]
-    // $sigUsdOracleSingletonTokenId: Coll[Byte]
-    // $ergonameMultiSigSigmaProp: SigmaProp
+    // None
 
     // ===== Context Variables (_) ===== //
-    // _ergoNameHash: Coll[Byte]    - Hash of the ErgoName to register.
+    // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
     // _insertionProof: Coll[Byte]  - Proof that the ErgoNameHash and ErgoNameTokenId were inserted into the registry avl tree.
     // _lookupProof: Coll[Byte]     - Proof for getting a value from the config avl tree.
 
