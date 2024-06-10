@@ -194,7 +194,8 @@
                 (subNameRegistryBoxOut.propositionBytes == $subNameContractBytes),
                 (subNameRegistryBoxOut.tokens(0) == (SELF.id, 1L)),
                 (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                (subNameRegistryBoxOut.R5[Coll[Byte]].get == ergoNameTokenId)
+                (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
+                (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameTokenId)
             ))
 
         }
