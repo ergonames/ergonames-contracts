@@ -37,9 +37,7 @@
     val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
 
     val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](0).get
-    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-
-    val isDefaultPaymentMode: Boolean = (CONTEXT.dataInputs.size == 1)
+    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).gets
 
     // ===== User-Defined Functions ===== //
     def isValidAscii(chars: Coll[Byte]): Boolean = {
