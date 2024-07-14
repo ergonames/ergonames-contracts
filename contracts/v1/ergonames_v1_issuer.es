@@ -13,7 +13,7 @@
     // R4: Int                                                                                                  ArtworkStandardVersion
     // R5: Coll[(Coll[Byte], Int)]                                                                              ArtworkRoyaltyRecipients
     // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
-    // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId        
+    // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId
     // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
     // R9: (GroupElement, Coll[Byte])                                                                           ReceiverData
 
@@ -39,6 +39,8 @@
     val receiverSigmaProp = proveDlog(receiverGE)
     val receiverErgoNameBytes = receiverData._2
 
+    val _ergoNameCollectionIssuerBox: Box = getVar[Box](0).get
+
     val validMintErgoNameNftTx: Boolean = {
 
         // Outputs
@@ -46,7 +48,7 @@
         val minerFeeBoxOut: Box = OUTPUTS(1)
 
         val validErgoNameCollection: Boolean = {
-            
+
             val validCollection: Boolean = ($ergoNameCollectionTokenId == _ergoNameCollectionIssuerBox.id)
             val validSelection: Boolean = (artworkCollectionTokenId == $ergoNameCollectionTokenId)
             val validExistence: Boolean = (collectionTokenId, 1L) == (artworkCollectionTokenId, 1L)
@@ -56,7 +58,7 @@
                 validSelection,
                 validExistence
             ))
-            
+
         }
 
         val validErgoNameMint: Boolean = {
@@ -69,21 +71,15 @@
 
         }
 
-        val validCollectionTokenBurn: Boolean = {
-
-            OUTPUTS.forall((output: Box) => {
-
-                output.tokens.forall((token: (Coll[Byte], Long)) => {
-
-                    (token._1 != collectionTokenId)
-
-                })
-
-            })
-
+        val validCollectionTokenBurn = {
+            OUTPUTS.forall { (output: Box) =>
+                output.tokens.forall { (token: (Coll[Byte], Long)) =>
+                    token._1 != collectionTokenId
+                }
+            }
         }
 
-        val validMinerFeeBoxOut: Boolean = {
+        val validMinerFee: Boolean = {
 
             allOf(Coll(
                 (SELF.value == minerFeeBoxOut.value * 2),
