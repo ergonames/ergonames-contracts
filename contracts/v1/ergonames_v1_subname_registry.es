@@ -37,7 +37,7 @@
     val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
 
     val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](0).get
-    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).gets
+    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
 
     // ===== User-Defined Functions ===== //
     def isValidAscii(chars: Coll[Byte]): Boolean = {
@@ -79,9 +79,9 @@
         // Relevant Variables
         val subNameTokenId: Coll[Byte]              = SELF.id // Thus all ErgoName token ids will be unique.
 
-        val subNameBytes: Coll[Byte]                = subNameRegistryBoxOut.R4[Coll[Byte]].get
+        val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R4[Coll[Byte]].get
 
-        val receiverPKGroupElement: GroupElement    = subNameRegistryBoxOut.R5[GroupElement].get
+        val receiverPKGroupElement: GroupElement    = childSubNameRegistryBoxOut.R5[GroupElement].get
         val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
 
         val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0)._1 == parentErgoNameTokenId)
@@ -142,12 +142,17 @@
 
             val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
 
+            val validR5: Boolean = {
+                val r5 = childSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
+                r5._1.size == 0 && r5._2 == 0L
+            }
+
             allOf(Coll(
-                (subNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
-                (subNameRegistryBoxOut.tokens(0) == (childSubNameRegistryBoxIn.tokens(0)._1, 1L)),
-                (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                (subNameRegistryBoxOut.R5[(Coll[Byte], Long)] == (Coll[Byte](), 0L)),
-                (subNameRegistryBoxOut.R6[Coll[Byte]].get == subNameTokenId)
+                (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
+                (childSubNameRegistryBoxOut.tokens(0) == (childSubNameRegistryBoxIn.tokens(0)._1, 1L)),
+                (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+                validR5,
+                (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameTokenId)
             ))
 
         }
@@ -182,5 +187,4 @@
     }
 
     sigmaProp(validMintSubNameTx) || $ergonameMultiSigSigmaProp
-
 }
