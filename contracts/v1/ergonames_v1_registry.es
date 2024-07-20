@@ -283,7 +283,8 @@
             validCommit,
             validRegistryUpdate,
             validSubNameRegistryBoxOut,
-            validErgoNameIssuerBoxOut
+            validErgoNameIssuerBoxOut,
+            validErgoNameFeeBoxOut
         ))
 
     }
