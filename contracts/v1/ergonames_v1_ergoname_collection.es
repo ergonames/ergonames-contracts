@@ -2,106 +2,72 @@
 
     // ===== Contract Description ===== //
     // Name: ErgoName Collection Contract
-    // Description: Used as the issuer box for minting the ErgoName NFT of the user.
+    // Description: Cntract holding the ErgoName collecion tokens.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
     // ===== Box Contents ===== //
     // Tokens
-    // 1. (ErgoNameCollectionTokenId, 1L)
+    // 1. (ErgoNameCollectionTokenId, Long.MaxValue)
     // Registers
-    // R4: Int                                                                                                  ArtworkStandardVersion
-    // R5: Coll[(Coll[Byte], Int)]                                                                              ArtworkRoyaltyRecipients
-    // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
-    // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId        
-    // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
-    // R9: (GroupElement, Coll[Byte])                                                                           ReceiverData
+    // None
 
     // ===== Relevant Transactions ===== //
-    // 1. Mint ErgoName NFT
-    // Inputs: ErgoNameIssuer
+    // 1. Commit
+    // Inputs: ErgoNameCollection
     // Data Inputs: None
-    // Outputs: ErgoNameIssuance, MinerFee
+    // Outputs: ErgoNameCollection, Commit, MinerFee
     // Context Variables: ErgoNameCollectionIssuerBox
 
     // ===== Compile Time Constants ($) ===== //
-    // $ergoNameCollectionTokenId
+    // $commitErgoTreeBytes: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
-    // _ergoNameCollectionIssuerBox
+    // None
 
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
-    val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
-    val receiverData: (GroupElement, Coll[Byte]) = SELF.R9[(GroupElement, Coll[Byte])].get
-    val receiverGE: GroupElement = receiverData._1
-    val receiverSigmaProp = proveDlog(receiverGE)
-    val receiverErgoNameBytes = receiverData._2
+    val ergonameCollectionTokenId: Coll[Byte] = SELF.tokens(0)._1
+    val ergonameCollectionTokenAmount: Long = SELF.tokens(0)._2
 
-    val validMintErgoNameNftTx: Boolean = {
+
+    val validCommitTx: Boolean = {
 
         // Outputs
-        val receiverBoxOut: Box = OUTPUTS(0)
-        val minerFeeBoxOut: Box = OUTPUTS(1)
+        val ergonameCollectionBoxOut: Box = OUTPUTS(0)
+        val commitBoxOut: Box = OUTPUTS(1)
+        val minerFeeBoxOut: Box = OUTPUTS(2)
 
-        val validErgoNameCollection: Boolean = {
-            
-            val validCollection: Boolean = ($ergoNameCollectionTokenId == _ergoNameCollectionIssuerBox.id)
-            val validSelection: Boolean = (artworkCollectionTokenId == $ergoNameCollectionTokenId)
-            val validExistence: Boolean = (collectionTokenId, 1L) == (artworkCollectionTokenId, 1L)
+        val validSelfRecreation: Boolean = {
 
             allOf(Coll(
-                validCollection,
-                validSelection,
-                validExistence
-            ))
-            
-        }
-
-        val validErgoNameMint: Boolean = {
-
-            allOf(Coll(
-                (SELF.value == receiverBoxOut.value * 2),
-                (receiverBoxOut.propositionBytes == receiverSigmaProp.propBytes),
-                (receiverBoxOut.tokens(0) == (SELF.id, 1L))
+                (ergonameCollectionBoxOut.value == SELF.value),
+                (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
+                (ergonameCollectionBoxOut.tokens(0) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount - 1L))
             ))
 
         }
 
-        val validCollectionTokenBurn: Boolean = {
-
-            OUTPUTS.forall((output: Box) => {
-
-                output.tokens.forall((token: (Coll[Byte], Long)) => {
-
-                    (token._1 != collectionTokenId)
-
-                })
-
-            })
-
-        }
-
-        val validMinerFeeBoxOut: Boolean = {
+        val validCommitBoxOut: Boolean = {
 
             allOf(Coll(
-                (SELF.value == minerFeeBoxOut.value * 2),
-                (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash),
-                (minerFeeBoxOut.tokens.size == 0)
+                (commitBoxOut.propositionBytes == $commitErgoTreeBytes),
+                (commitBoxOut.tokens(0) == (ergonameCollectionTokenId, 1L)),
+                (commitBoxOut.R7[Coll[Byte]].get == ergonameCollectionTokenId) // For artwork standard v2 (EIP-24).
             ))
 
         }
+
+        val validMinerFeeBoxOut: Boolean = (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
 
         allOf(Coll(
-            validErgoNameCollection,
-            validErgoNameMint,
-            validCollectionTokenBurn,
-            validMinerFee
+            validSelfRecreation,
+            validCommitBoxOut,
+            validMinerFeeBoxOut
         ))
 
     }
 
-    sigmaProp(validMintErgoNameNftTx)
+    sigmaProp(validCommitTx)
 
 }
