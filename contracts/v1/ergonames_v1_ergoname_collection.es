@@ -20,7 +20,7 @@
     // Context Variables: ErgoNameCollectionIssuerBox
 
     // ===== Compile Time Constants ($) ===== //
-    // $commitErgoTreeBytes: Coll[Byte]
+    // $commitErgoTreeBytesHash: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // None
@@ -51,7 +51,7 @@
         val validCommitBoxOut: Boolean = {
 
             allOf(Coll(
-                (commitBoxOut.propositionBytes == $commitErgoTreeBytes),
+                (blake2b256(commitBoxOut.propositionBytes) == $commitErgoTreeBytesHash),
                 (commitBoxOut.tokens(0) == (ergonameCollectionTokenId, 1L)),
                 (commitBoxOut.R7[Coll[Byte]].get == ergonameCollectionTokenId) // For artwork standard v2 (EIP-24).
             ))
