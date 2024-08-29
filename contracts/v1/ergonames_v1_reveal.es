@@ -72,7 +72,7 @@
             // Relevant Variables
             val subNameRegistryAmount: Long = subNameRegistryBoxOut.value
             val ergoNameIssuanceAmount: Long = ergonameIssuanceBoxOut.value
-            val ergoNameFeeErgAmount: Long = if (!isPayingWithToken) ergoNameFeeBoxOut.value else 0L
+            val ergoNameFeeErgAmount: Long = if (!isPayingWithToken) ergoNameFeeBoxOut.value else minBoxValue
             val ergoNameFeeTokenAmount: Long  = if (isPayingWithToken) ergoNameFeeBoxOut.tokens(0)._2 else 0L
             val minerFeeAmount: Long = minerFeeBoxOut.value
             val txOperatorFeeAmount: Long = txOperatorFeeBoxOut.value
