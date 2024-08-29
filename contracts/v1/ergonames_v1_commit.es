@@ -37,7 +37,7 @@
 
     // ===== Relevant Variables ===== //
     val userPKGroupElement: GroupElement = SELF.R5[GroupElement].get
-    val userPKSigmaProp: SigmaProp = proveDlog(buyerPKGroupElement)
+    val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
     val minerFee: Long = SELF.R6[Long].get
     val txOperatorFee: Long = SELF.R7[Long].get
     val creationHeight: Int = SELF.creationInfo._1
