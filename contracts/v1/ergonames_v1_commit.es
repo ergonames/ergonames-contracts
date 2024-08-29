@@ -10,23 +10,25 @@
     // None
     // Registers
     // R4: Coll[Byte]       CommitHash
-    // R5: GroupElement     BuyerPKGroupElement
+    // R5: GroupElement     UserPKGroupElement
     // R6: Long             MinerFee
+    // R7: Long             TxOperatorFee
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
-    // Inputs: Registry, Reveal, Commit
+    // Inputs: Reveal, Registry, Commit
     // Data Inputs: ErgoDexErg2SigUsd, ?ErgoDexErg2Token, ?Config
-    // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
+    // Outputs: ErgoNameIssuance, Registry, SubNameRegistry, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: None
     // 2. Refund
     // Inputs: Commit
     // Data Inputs: None
-    // Outputs: BuyerPK, MinerFee
+    // Outputs: UserPK, MinerFee, TxOperatorFee
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
     // $registrySingletonTokenId: Coll[Byte]
+    // $maxCommitBoxAge: Int
 
     // ===== Context Variables (_) ===== //
     // None
@@ -34,10 +36,13 @@
     val minerFeeErgoTreeHash = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
 
     // ===== Relevant Variables ===== //
-    val buyerPKGroupElement: GroupElement = SELF.R5[GroupElement].get
-    val buyerPKSigmaProp: SigmaProp = proveDlog(buyerPKGroupElement)
+    val userPKGroupElement: GroupElement = SELF.R5[GroupElement].get
+    val userPKSigmaProp: SigmaProp = proveDlog(buyerPKGroupElement)
     val minerFee: Long = SELF.R6[Long].get
-    val isRefund: Boolean = (OUTPUTS.size == 2)
+    val txOperatorFee: Long = SELF.R7[Long].get
+    val creationHeight: Int = SELF.creationInfo._1
+    val isOldEnough: Boolean = HEIGHT - creationHeight >= $maxCommitBoxAge
+    val isRefund: Boolean = (OUTPUTS.size == 3) && isOldEnough
 
     if (!isRefund) {
 
@@ -45,7 +50,7 @@
         val validMintErgoNameTx: Boolean = {
 
             // Inputs
-            val registryBoxIn: Box = INPUTS(0)
+            val registryBoxIn: Box = INPUTS(1)
 
 
             val validSingletonTokenId: Boolean = {
@@ -67,22 +72,21 @@
         // ===== Refund Tx ===== //
         val validRefundTx: Boolean = {
 
-            // Inputs
-
             // Outputs
-            val buyerPKBoxOut: Box = OUTPUTS(0)
+            val userPKBoxOut: Box = OUTPUTS(0)
             val minerFeeBoxOut: Box = OUTPUTS(1)
+            val txOperatorFeeBoxOut: Box = OUTPUTS(2)
 
-            val validBuyerPKBoxOut: Boolean = {
+            val validUser: Boolean = {
 
                 allOf(Coll(
-                    (buyerPKBoxOut.value == SELF.value - minerFee),
-                    (buyerPKBoxOut.propositionBytes == buyerPKSigmaProp.propBytes)
+                    (userPKBoxOut.value == SELF.value - minerFee - txOperatorFee),
+                    (userPKBoxOut.propositionBytes == userPKSigmaProp.propBytes)
                 ))
 
             }
 
-            val validMinerFeeBoxOut: Boolean = {
+            val validMinerFeeBox: Boolean = {
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
@@ -91,15 +95,21 @@
 
             }
 
+            val validTxOperatorFee: Boolean = {
+
+                (txOperatorFeeBoxOut.value == txOperatorFee)
+
+            }
+
             allOf(Coll(
-                validBuyerPKBoxOut,
-                validMinerFeeBoxOut,
-                (OUTPUTS.size == 2)
+                validUser,
+                validMinerFee,
+                validTxOperatorFee
             ))
 
         }
 
-        sigmaProp(validRefundTx) && buyerPKSigmaProp
+        sigmaProp(validRefundTx)
 
     }
 
