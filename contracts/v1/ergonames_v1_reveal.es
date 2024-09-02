@@ -16,7 +16,7 @@
     // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
     // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId
     // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
-    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId], Coll[MinerFee, TxOperatorFee, MinBoxValue]))             
+    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -52,6 +52,8 @@
     val isRefund: Boolean = (OUTPUTS.size == 4)
     val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
+
+    val _ergoNameCollectionIssuerBox: Box = getVar[Box](0).get
 
     if (!isRefund) {
 
@@ -99,14 +101,14 @@
                 ))
 
             }
-            
+
             val validCollectionTokenBurn = {
                 OUTPUTS.forall { (output: Box) =>
                     output.tokens.forall { (token: (Coll[Byte], Long)) =>
                         token._1 != collectionTokenId
                     }
                 }
-            }                                
+            }
 
             val validRevealBoxInValue: Boolean = {
 
@@ -158,7 +160,7 @@
                     (txOperatorFeeBoxOut.value == txOperatorFee),
                     (txOperatorFee == commitBoxIn.value)
                 ))
-                
+
             }
 
             allOf(Coll(
@@ -187,12 +189,11 @@
             val ergonameCollectionBoxOut: Box = OUTPUTS(0)
             val userPKBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
-            val txOperatorFee: Box = OUTPUTS(3)
 
             val validErgoNameCollection: Boolean = {
 
                 allOf(Coll(
-                    (ergonameCollectionBoxOut.tokens(0)._1 == $ergonameCollectionTokenId),
+                    (ergonameCollectionBoxOut.tokens(0)._1 == $ergoNameCollectionTokenId),
                     (ergonameCollectionBoxOut.tokens(0)._2 > 1L)
                 ))
 
@@ -217,8 +218,8 @@
             }
 
             allOf(Coll(
-                validuserPKBoxOut,
-                validMinerFeeBoxOut,
+                validUser,
+                validMinerFee,
                 (OUTPUTS.size == 2)
             ))
 

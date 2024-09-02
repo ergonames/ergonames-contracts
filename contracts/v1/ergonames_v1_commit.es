@@ -86,7 +86,7 @@
 
             }
 
-            val validMinerFeeBox: Boolean = {
+            val validMinerFee: Boolean = {
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),

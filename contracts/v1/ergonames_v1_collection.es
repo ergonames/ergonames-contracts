@@ -2,7 +2,7 @@
 
     // ===== Contract Description ===== //
     // Name: ErgoName Collection Contract
-    // Description: Cntract holding the ErgoName collecion tokens.
+    // Description: Contract holding the ErgoName collecion tokens.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
@@ -95,7 +95,7 @@
                 allOf(Coll(
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
-                    (ergonameCollectionBoxOut.tokens(0) == (ergoNameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
+                    (ergonameCollectionBoxOut.tokens(0) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
                 ))
 
             }
@@ -104,7 +104,7 @@
 
                 allOf(Coll(
                     (blake2b256(revealBoxIn.propositionBytes) == $revealErgoTreeBytesHash),
-                    (revealBoxIn.tokens(0) == (ergoNameCollectionTokenId, 1L))
+                    (revealBoxIn.tokens(0) == (ergonameCollectionTokenId, 1L))
                 ))
 
             }
