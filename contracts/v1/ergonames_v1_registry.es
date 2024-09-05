@@ -8,7 +8,6 @@
     // ===== Box Contents ===== //
     // Tokens
     // 1. (RegistrySingletonTokenId, 1L)
-    // 2. (ErgoNameCollectionTokenId, Long.MaxValue)
     // Registers
     // R4: AvlTree              RegistryAvlTree
     // R5: (Coll[Byte], Long)   PreviousState
@@ -17,14 +16,13 @@
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
-    // Inputs: Registry, Reveal, Commit
-    // Data Inputs: SigUsdOracle, ?ErgoDexErg2Token, ?Config
-    // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
+    // Inputs: Reveal, Registry, Commit
+    // Data Inputs: SigUsdOracleDatapoint, ?ErgoDexErg2Token, ?Config
+    // Outputs: ErgoNameIssuance, Registry, SubNameRegistry, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
     // $subNameContractBytes: Coll[Byte]
-    // $ergoNameIssuerContractBytes: Coll[Byte]
     // $ergoNameFeeContractBytes: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $sigUsdOracleSingletonTokenId: Coll[Byte]
@@ -95,27 +93,28 @@
     val validMintErgoNameTx: Boolean = {
 
         // Inputs
-        val revealBoxIn: Box = INPUTS(1)
+        val revealBoxIn: Box = INPUTS(0)
         val commitBoxIn: Box = INPUTS(2)
 
         // Outputs
-        val registryBoxOut: Box         = OUTPUTS(0)
-        val subNameRegistryBoxOut: Box  = OUTPUTS(1)
-        val ergoNameIssuerBoxOut: Box   = OUTPUTS(2)
+        val ergoNameIssuanceBoxOut: Box = OUTPUTS(0)
+        val registryBoxOut: Box         = OUTPUTS(1)
+        val subNameRegistryBoxOut: Box  = OUTPUTS(2)
         val ergoNameFeeBoxOut: Box      = OUTPUTS(3)
         val minerFeeBoxOut: Box         = OUTPUTS(4)
         val txOperatorFeeBoxOut: Box    = OUTPUTS(5)
 
         // Relevant Variables
-        val ergoNameTokenId: Coll[Byte]             = ergoNameIssuerBoxOut.id // Thus all ErgoName token ids will be unique.
+        val ergoNameTokenId: Coll[Byte]             = revealBoxIn.id // Thus all ErgoName token ids will be unique.
 
         val commitAge: Int                          = (HEIGHT - commitBoxIn.creationInfo._1)
         val commitHash: Coll[Byte]                  = commitBoxIn.R4[Coll[Byte]].get
 
-        val ergoNameBytes: Coll[Byte]               = revealBoxIn.R4[Coll[Byte]].get
-        val receiverPKGroupElement: GroupElement    = revealBoxIn.R5[GroupElement].get
-        val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
-        val commitSecret: Coll[Byte]                = revealBoxIn.R6[Coll[Byte]].get
+        val revealData: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))      = revealBoxIn.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
+        val ergoNameBytes: Coll[Byte]                                       = revealData._2._1(0)
+        val receiverPKGroupElement: GroupElement                            = revealData._1
+        val receiverPKSigmaProp: SigmaProp                                  = proveDlog(receiverPKGroupElement)
+        val commitSecret: Coll[Byte]                                        = revealData._2._1(1)
 
         val validErgoNameFormat: Boolean = {
 
@@ -192,29 +191,10 @@
 
             allOf(Coll(
                 (subNameRegistryBoxOut.propositionBytes == $subNameContractBytes),
-                (subNameRegistryBoxOut.tokens(0) == (SELF.id, 1L)),
+                (subNameRegistryBoxOut.tokens(0) == (ergoNameTokenId, 1L)), // We mint a token without following the asset standard, just used for identification purposes. This will have the same token id as the user's ErgoName.
                 (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
                 (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
                 (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameTokenId)
-            ))
-
-        }
-
-        val validErgoNameIssuerBoxOut: Boolean = {
-
-            val validErgoNameCollectionTokenTransfer: Boolean = {
-
-                allOf(Coll(
-                    (registryBoxOut.tokens(1) == (SELF.tokens(1)._1, SELF.tokens(1)._2 - 1L)),
-                    (ergoNameIssuerBoxOut.tokens(0) == (SELF.tokens(1)._1, 1L))
-                ))
-
-            }
-
-            allOf(Coll(
-                (ergoNameIssuerBoxOut.propositionBytes == $ergoNameIssuerContractBytes),
-                (ergoNameIssuerBoxOut.R9[(GroupElement, Coll[Byte])].get == (receiverPKGroupElement, ergoNameBytes)),
-                validErgoNameCollectionTokenTransfer
             ))
 
         }
@@ -283,7 +263,6 @@
             validCommit,
             validRegistryUpdate,
             validSubNameRegistryBoxOut,
-            validErgoNameIssuerBoxOut,
             validErgoNameFeeBoxOut
         ))
 
