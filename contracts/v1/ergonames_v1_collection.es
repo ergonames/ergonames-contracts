@@ -1,7 +1,7 @@
 {
 
     // ===== Contract Description ===== //
-    // Name: ErgoName Collection Contract
+    // Name: ErgoNames Collection Contract
     // Description: Contract holding the ErgoName collecion tokens.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
@@ -14,7 +14,7 @@
 
     // ===== Relevant Transactions ===== //
     // 1. Reveal
-    // Inputs: ErgoNameCollection, UserPK
+    // Inputs: ErgoNameCollection, RevealProxy
     // Data Inputs: None
     // Outputs: ErgoNameCollection, Reveal, MinerFee
     // Context Variables: None
@@ -26,6 +26,7 @@
 
     // ===== Compile Time Constants ($) ===== //
     // $revealErgoTreeBytesHash: Coll[Byte]
+    // $revealProxyErgoTreeBytesHash: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // None
@@ -40,10 +41,17 @@
 
         val validRevealTx: Boolean = {
 
+            // Inputs
+            val revealProxyBoxIn: Box = INPUTS(1)
+
             // Outputs
             val ergonameCollectionBoxOut: Box = OUTPUTS(0)
             val revealBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
+
+            // Relevant Variables
+            val minerFee: Long = revealProxyBoxIn.R4[Long].get
+            val revealBoxHash: Coll[Byte] = revealProxyBoxIn.R5[Coll[Byte]].get
 
             val validSelfRecreation: Boolean = {
 
@@ -55,22 +63,22 @@
 
             }
 
-            val validReveal: Boolean = {
+            val validRevealProxy: Boolean = (blake2b256(revealBoxIn.propositionBytes) == $revealProxyErgoTreeBytesHash)
 
+            val validReveal: Boolean = {
+                               
                 allOf(Coll(
                     (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
                     (revealBoxOut.tokens(0) == (ergonameCollectionTokenId, 1L)),
-                    (revealBoxOut.R7[Coll[Byte]].get == ergonameCollectionTokenId) // For artwork standard v2 (EIP-24).
+                    (revealBoxOut.R7[Coll[Byte]].get == ergonameCollectionTokenId), // For artwork standard v2 (EIP-24).
                 ))
 
             }
 
-            val validMinerFee: Boolean = (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
-
             allOf(Coll(
                 validSelfRecreation,
-                validReveal,
-                validMinerFee
+                validRevealProxy,
+                validReveal
             ))
 
         }
