@@ -12,16 +12,18 @@
     // R4: AvlTree              RegistryAvlTree
     // R5: (Coll[Byte], Long)   PreviousState
     // R6: Coll[Byte]           ParentErgoNameTokenId
+    // R7: (Long, Long)         Fees: (MinMinerFee, MinTxOperatorFee)
 
     // ===== Relevant Transactions ===== //
     // 1. Mint SubName
-    // Inputs: ParentSubNameRegistry, ChildSubnameRegistryNFT, ErgoNameNFT
+    // Inputs: ErgoNameNFT, ParentSubNameRegistry
     // Data Inputs: None
-    // Outputs: ParentSubNameRegistry, ChildSubNameRegistry, SubNameNFT, ErgoNameNFT, MinerFee, TxOperatorFee
+    // Outputs: SubNameNFT, ParentSubNameRegistry, ChildSubNameRegistry, ErgoNameNFT, MinerFee, TxOperatorFee
     // Context Variables: SubNameHash, InerstionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
-    // None
+    // $minMinerFee: Long
+    // $minTxOperatorFee: Long
 
     // ===== Context Variables (_) ===== //
     // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
@@ -32,9 +34,13 @@
     // def isValidAscii: (Coll[Byte] => Boolean)
 
     // ===== Relevant Variables ===== //
+    val minerFeeErgoTreeHash: Coll[Byte]    = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
     val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
     val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
+    val fees: (Long, Long)                  = SELF.R7[(Long, Long)].get
+    val minMinerFee: Long                   = fees._1
+    val minTxOperatorFee: Long              = fees._2
 
     val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](0).get
     val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
@@ -65,26 +71,26 @@
     val validMintSubNameTx: Boolean = {
 
         // Inputs
-        val childSubNameRegistryBoxIn: Box  = INPUTS(1)
-        val ergoNameNftBoxIn: Box           = INPUTS(2)
+        val ergoNameNftBoxIn: Box           = INPUTS(0)
+        val parentSubNameRegistryBoxIn: Box = INPUTS(1)
 
         // Outputs
-        val parentSubNameRegistryBoxOut: Box            = OUTPUTS(0)
-        val childSubNameRegistryBoxOut: Box             = OUTPUTS(1)
-        val subNameNftBoxOut: Box                       = OUTPUTS(2)
+        val subNameNftBoxOut: Box                       = OUTPUTS(0)
+        val parentSubNameRegistryBoxOut: Box            = OUTPUTS(1)
+        val childSubNameRegistryBoxOut: Box             = OUTPUTS(2)
         val ergoNameNftBoxOut: Box                      = OUTPUTS(3)
         val minerFeeBoxOut: Box                         = OUTPUTS(4)
         val txOperatorFeeBoxOut: Box                    = OUTPUTS(5)
 
         // Relevant Variables
-        val subNameTokenId: Coll[Byte]              = SELF.id // Thus all ErgoName token ids will be unique.
+        val subNameTokenId: Coll[Byte]              = ergoNameNftBoxIn.id // Thus all ErgoName token ids will be unique.
 
         val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R4[Coll[Byte]].get
 
         val receiverPKGroupElement: GroupElement    = childSubNameRegistryBoxOut.R5[GroupElement].get
         val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
 
-        val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0)._1 == parentErgoNameTokenId)
+        val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0) == (parentErgoNameTokenId, 1L))
 
         val validSubNameFormat: Boolean = {
 
@@ -149,7 +155,7 @@
 
             allOf(Coll(
                 (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
-                (childSubNameRegistryBoxOut.tokens(0) == (childSubNameRegistryBoxIn.tokens(0)._1, 1L)),
+                (childSubNameRegistryBoxOut.tokens(0) == (subNameTokenId, 1L)),
                 (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
                 validR5,
                 (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameTokenId)
@@ -175,13 +181,33 @@
 
         }
 
+        val validMinerFee: Boolean = {
+
+            allOf(Coll(
+                (minerFeeBoxOut.value >= minMinerFee),
+                (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash),
+                (minerFeeBoxOut.tokens.size == 0)
+            ))
+
+        }
+
+        val validTxOperatorFeeBoxOut: Boolean = {
+
+            allOf(Coll(
+                (txOperatorFeeBoxOut.value >= minTxOperatorFee)
+            ))
+
+        }
+
         allOf(Coll(
             validParentErgoName,
             validSubNameFormat,
             validSubNameRegistryUpdate,
             validChildSubNameRegistryBoxOut,
             validSubNameNftBoxOut,
-            validErgoNameNftBoxOut
+            validErgoNameNftBoxOut,
+            validMinerFee,
+            validTxOperatorFee
         ))
 
     }
