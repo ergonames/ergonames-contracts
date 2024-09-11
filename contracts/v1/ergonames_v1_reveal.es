@@ -32,7 +32,8 @@
 
     // ===== Compile Time Constants ($) ===== //
     // $commitContractBytesHash: Coll[Byte]
-    // $ergoNameCollectionTokenId
+    // $ergoNameCollectionSingletonTokenId: Coll[Byte]
+    // $ergoNameCollectionTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _ergoNameCollectionIssuerBox
@@ -49,7 +50,7 @@
     val minBoxValue: Long = revealData._2._2(2)
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val isPayingWithToken: Boolean = (SELF.tokens.size == 2)
-    val isRefund: Boolean = (OUTPUTS.size == 4)
+    val isRefund: Boolean = (OUTPUTS.size == 3)
     val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
 
@@ -192,14 +193,7 @@
             val userPKBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
 
-            val validErgoNameCollection: Boolean = {
-
-                allOf(Coll(
-                    (ergonameCollectionBoxOut.tokens(0)._1 == $ergoNameCollectionTokenId),
-                    (ergonameCollectionBoxOut.tokens(0)._2 > 1L)
-                ))
-
-            }
+            val validErgoNameCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId)
 
             val validUser: Boolean = {
 
@@ -220,9 +214,9 @@
             }
 
             allOf(Coll(
+                validErgoNameCollection,
                 validUser,
-                validMinerFee,
-                (OUTPUTS.size == 2)
+                validMinerFee
             ))
 
         }

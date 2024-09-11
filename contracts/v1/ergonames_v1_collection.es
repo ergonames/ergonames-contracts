@@ -36,7 +36,7 @@
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val ergonameCollectionTokenId: Coll[Byte] = SELF.tokens(1)._1
     val ergonameCollectionTokenAmount: Long = SELF.tokens(1)._2
-    val isRefund: Boolean = (OUTPUTS.size == 4)
+    val isRefund: Boolean = (OUTPUTS.size == 3)
 
     if (!isRefund) {
 
@@ -49,10 +49,7 @@
             val ergonameCollectionBoxOut: Box = OUTPUTS(0)
             val revealBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
-
-            // Relevant Variables
-            val minerFee: Long = revealProxyBoxIn.R4[Long].get
-            val revealBoxHash: Coll[Byte] = revealProxyBoxIn.R5[Coll[Byte]].get
+            val txOperatorFeeBoxOut: Box = OUTPUTS(3)
 
             val validSelfRecreation: Boolean = {
 
@@ -98,7 +95,6 @@
             val ergonameCollectionBoxOut: Box = OUTPUTS(0)
             val userPKBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
-            val txOperatorFeeBoxOut: Box = OUTPUTS(3)
 
             val validSelfRecreation: Boolean = {
 
