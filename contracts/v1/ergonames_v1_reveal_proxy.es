@@ -21,8 +21,7 @@
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
-    // $ergonameCollectionTokenId: Coll[Byte]
-    // $ergonameCollectionErgoTreeBytesHash: Coll[Byte]
+    // $ergonameCollectionSingletonTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // None
@@ -42,14 +41,7 @@
         val revealBoxOut: Box = OUTPUTS(1)
         val minerFeeBoxOut: Box = OUTPUTS(2)
 
-        val validCollection: Boolean = {
-
-            allOf(Coll(
-                (blake2b256(ergonameCollectionBoxIn.propositionBytes) == $ergonameCollectionErgoTreeBytesHash)
-                (ergonameCollectionBoxIn.tokens(0)._1 == $ergonameCollectionTokenId)
-            ))
-            
-        }
+        val validCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergonameCollectionSingletonTokenId)
 
         val validReveal: Boolean = {
             
