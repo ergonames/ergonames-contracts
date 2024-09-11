@@ -12,7 +12,6 @@
     // R4: Coll[Byte]       CommitHash
     // R5: GroupElement     UserPKGroupElement
     // R6: Long             MinerFee
-    // R7: Long             TxOperatorFee
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -23,7 +22,7 @@
     // 2. Refund
     // Inputs: Commit
     // Data Inputs: None
-    // Outputs: UserPK, MinerFee, TxOperatorFee
+    // Outputs: UserPK, MinerFee
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
@@ -39,10 +38,9 @@
     val userPKGroupElement: GroupElement = SELF.R5[GroupElement].get
     val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
     val minerFee: Long = SELF.R6[Long].get
-    val txOperatorFee: Long = SELF.R7[Long].get
     val creationHeight: Int = SELF.creationInfo._1
     val isOldEnough: Boolean = HEIGHT - creationHeight >= $maxCommitBoxAge
-    val isRefund: Boolean = (OUTPUTS.size == 3) && isOldEnough
+    val isRefund: Boolean = (OUTPUTS.size == 2) && isOldEnough
 
     if (!isRefund) {
 
@@ -75,12 +73,11 @@
             // Outputs
             val userPKBoxOut: Box = OUTPUTS(0)
             val minerFeeBoxOut: Box = OUTPUTS(1)
-            val txOperatorFeeBoxOut: Box = OUTPUTS(2)
 
             val validUser: Boolean = {
 
                 allOf(Coll(
-                    (userPKBoxOut.value == SELF.value - minerFee - txOperatorFee),
+                    (userPKBoxOut.value == SELF.value - minerFee),
                     (userPKBoxOut.propositionBytes == userPKSigmaProp.propBytes)
                 ))
 
@@ -95,16 +92,9 @@
 
             }
 
-            val validTxOperatorFee: Boolean = {
-
-                (txOperatorFeeBoxOut.value == txOperatorFee)
-
-            }
-
             allOf(Coll(
                 validUser,
-                validMinerFee,
-                validTxOperatorFee
+                validMinerFee
             ))
 
         }
