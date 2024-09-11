@@ -12,38 +12,27 @@
     // R4: AvlTree              RegistryAvlTree
     // R5: (Coll[Byte], Long)   PreviousState
     // R6: Coll[Byte]           ParentErgoNameTokenId
-    // R7: (Long, Long)         Fees: (MinMinerFee, MinTxOperatorFee)
 
     // ===== Relevant Transactions ===== //
     // 1. Mint SubName
     // Inputs: ErgoNameNFT, ParentSubNameRegistry
     // Data Inputs: None
     // Outputs: SubNameNFT, ParentSubNameRegistry, ChildSubNameRegistry, ErgoNameNFT, MinerFee, TxOperatorFee
-    // Context Variables: SubNameHash, InerstionProof, LookUpProof
+    // Context Variables: Action, SubNameHash, InerstionProof
+    // 2. SubName Self-Burn
+    // Inputs: ParentSubNameRegistry, ErgoNameNFT
+    // Data Inputs: None
+    // Outputs: ParentSubNameRegistry
+    // Context Variables: Action, SubNameHash, LookUpProof, RemoveProof
 
     // ===== Compile Time Constants ($) ===== //
-    // $minMinerFee: Long
-    // $minTxOperatorFee: Long
+    // None
 
     // ===== Context Variables (_) ===== //
-    // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
-    // _insertionProof: Coll[Byte]  - Proof that the SubNameHash and SubNameTokenId were inserted into the registry avl tree.
-    // _lookupProof: Coll[Byte]     - Proof for getting a value from the config avl tree.
+    // _action: Byte    - Byte representing the transaction type.
 
     // ===== User-Defined Functions ===== //
     // def isValidAscii: (Coll[Byte] => Boolean)
-
-    // ===== Relevant Variables ===== //
-    val minerFeeErgoTreeHash: Coll[Byte]    = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
-    val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
-    val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
-    val fees: (Long, Long)                  = SELF.R7[(Long, Long)].get
-    val minMinerFee: Long                   = fees._1
-    val minTxOperatorFee: Long              = fees._2
-
-    val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](0).get
-    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
 
     // ===== User-Defined Functions ===== //
     def isValidAscii(chars: Coll[Byte]): Boolean = {
@@ -67,59 +56,211 @@
         }
     }
 
-    // ===== Mint SubName Tx ===== //
-    val validMintSubNameTx: Boolean = {
+    // ===== Relevant Variables ===== //
+    val _action: Byte = getVar[Byte](0).get
 
-        // Inputs
-        val ergoNameNftBoxIn: Box           = INPUTS(0)
-        val parentSubNameRegistryBoxIn: Box = INPUTS(1)
+    if (_action == 1.toByte) { // Mint SubName
 
-        // Outputs
-        val subNameNftBoxOut: Box                       = OUTPUTS(0)
-        val parentSubNameRegistryBoxOut: Box            = OUTPUTS(1)
-        val childSubNameRegistryBoxOut: Box             = OUTPUTS(2)
-        val ergoNameNftBoxOut: Box                      = OUTPUTS(3)
-        val minerFeeBoxOut: Box                         = OUTPUTS(4)
-        val txOperatorFeeBoxOut: Box                    = OUTPUTS(5)
+        // ===== Context Variables ===== //
+        // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
+        // _insertionProof: Coll[Byte]  - Proof that the SubNameHash and SubNameTokenId were inserted into the registry avl tree.
 
-        // Relevant Variables
-        val subNameTokenId: Coll[Byte]              = ergoNameNftBoxIn.id // Thus all ErgoName token ids will be unique.
+        // ===== Relevant Variables ===== //
+        val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
+        val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
+        val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
 
-        val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R4[Coll[Byte]].get
+        val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](1).get
+        val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](2).get
 
-        val receiverPKGroupElement: GroupElement    = childSubNameRegistryBoxOut.R5[GroupElement].get
-        val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
+        // ===== Mint SubName Tx ===== //
+        val validMintSubNameTx: Boolean = {
 
-        val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0) == (parentErgoNameTokenId, 1L))
+            // Inputs
+            val ergoNameNftBoxIn: Box           = INPUTS(0)
+            val parentSubNameRegistryBoxIn: Box = INPUTS(1) // i.e. SELF
 
-        val validSubNameFormat: Boolean = {
+            // Outputs
+            val subNameNftBoxOut: Box                       = OUTPUTS(0)
+            val parentSubNameRegistryBoxOut: Box            = OUTPUTS(1)
+            val childSubNameRegistryBoxOut: Box             = OUTPUTS(2)
+            val ergoNameNftBoxOut: Box                      = OUTPUTS(3)
+            val minerFeeBoxOut: Box                         = OUTPUTS(4)
+            val txOperatorFeeBoxOut: Box                    = OUTPUTS(5)
 
-            allOf(Coll(
-                (subNameBytes.size > 0),
-                isValidAscii(subNameBytes)
-            ))
+            // Relevant Variables
+            val subNameTokenId: Coll[Byte]              = ergoNameNftBoxIn.id // Thus all ErgoName token ids will be unique.
 
-        }
+            val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R4[Coll[Byte]].get
 
-        val validSubNameRegistryUpdate: Boolean = {
+            val receiverPKGroupElement: GroupElement    = childSubNameRegistryBoxOut.R5[GroupElement].get
+            val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
 
-            val validStateUpdate: Boolean = {
+            val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0) == (parentErgoNameTokenId, 1L))
 
-                val newState: (Coll[Byte], Long)        = parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
-
-                val validSubNameTokenIdUpdate: Boolean  = (newState._1 == subNameTokenId)
-                val validIndexIncrement: Boolean        = (newState._2 == previousState._2 + 1L)
+            val validSubNameFormat: Boolean = {
 
                 allOf(Coll(
-                    validSubNameTokenIdUpdate,
-                    validIndexIncrement
+                    (subNameBytes.size > 0),
+                    isValidAscii(subNameBytes)
                 ))
 
             }
 
-            val validSubNameInsertion: Boolean = {
+            val validSubNameRegistryUpdate: Boolean = {
 
-                val newRegistry: AvlTree = previousRegistry.insert(Coll((_subNameHash, subNameTokenId)), _insertionProof).get
+                val validStateUpdate: Boolean = {
+
+                    val newState: (Coll[Byte], Long)        = parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
+
+                    val validSubNameTokenIdUpdate: Boolean  = (newState._1 == subNameTokenId)
+                    val validIndexIncrement: Boolean        = (newState._2 == previousState._2 + 1L)
+
+                    allOf(Coll(
+                        validSubNameTokenIdUpdate,
+                        validIndexIncrement
+                    ))
+
+                }
+
+                val validSubNameInsertion: Boolean = {
+
+                    val newRegistry: AvlTree = previousRegistry.insert(Coll((_subNameHash, subNameTokenId)), _insertionProof).get
+
+                    (parentSubNameRegistryBoxOut.R4[AvlTree].get.digest == newRegistry.digest)
+
+                }
+
+                val validSelfRecreation: Boolean = {
+
+                    allOf(Coll(
+                        (parentSubNameRegistryBoxOut.value == SELF.value),
+                        (parentSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
+                        (parentSubNameRegistryBoxOut.tokens(0) == SELF.tokens(0)),
+                        (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get)
+                    ))
+
+                }
+
+                allOf(Coll(
+                    validStateUpdate,
+                    validSubNameInsertion,
+                    validSelfRecreation
+                ))
+
+            }
+
+            val validChildSubNameRegistryBoxOut: Boolean = {
+
+                val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+
+                val validR5: Boolean = {
+                    val r5 = childSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
+                    (r5._1.size == 0) && (r5._2 == 0L)
+                }
+
+                allOf(Coll(
+                    (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
+                    (childSubNameRegistryBoxOut.tokens(0) == (subNameTokenId, 1L)),
+                    (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+                    validR5,
+                    (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameTokenId)
+                ))
+
+            }
+
+            val validSubNameNftBoxOut: Boolean = {
+
+                allOf(Coll(
+                    (subNameNftBoxOut.propositionBytes == receiverPKSigmaProp.propBytes),
+                    (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L))
+                ))
+
+            }
+
+            val validErgoNameNftBoxOut: Boolean = {
+
+                allOf(Coll(
+                    (ergoNameNftBoxOut.propositionBytes == receiverPKSigmaProp.propBytes),
+                    (ergoNameNftBoxOut.tokens(0) == ergoNameNftBoxIn.tokens(0))
+                ))
+
+            }
+
+            allOf(Coll(
+                validParentErgoName,
+                validSubNameFormat,
+                validSubNameRegistryUpdate,
+                validChildSubNameRegistryBoxOut,
+                validSubNameNftBoxOut,
+                validErgoNameNftBoxOut
+            ))
+
+        }
+
+        sigmaProp(validMintSubNameTx) || $ergonameMultiSigSigmaProp
+
+    } else if (_txType == 2.Byte) { // SubName Self-Burn
+        
+        // ===== Context Variables ===== //
+        // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
+        // _lookupProof: Coll[Byte]     - Proof for retrieveing SubName from the avl tree.
+        // _removeProof: Coll[Byte]     - Proof SubName was deleted from the avl tree.
+
+        // ===== Relevant Variables ===== //
+        val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
+        val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
+        val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
+
+        val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](1).get
+        val _lookupProof: Coll[Byte]    = getVar[Coll[Byte]](2).get
+        val _removeProof: Coll[Byte]    = getVar[Coll[Byte]](3).get
+
+        // ===== SubName Self-Burn Tx ===== //
+        val validSubNameSelfBurnTx: Boolean = {
+
+            // Inputs
+            val userPkBoxIn: Box = INPUTS(1)
+
+            // Outputs
+            val parentSubNameRegistryBoxOut: Box = OUTPUTS(0)
+
+            // Relevant Variables
+            val subnameTokenId: Coll[Byte] = userPkBoxIn.tokens(0)._1
+
+
+
+            // val validStateUpdate: Boolean = {
+
+            //     val newState: (Coll[Byte], Long)        = parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
+
+            //     val validSubNameTokenIdUpdate: Boolean  = (newState._1 == subNameTokenId)
+            //     val validIndexIncrement: Boolean        = (newState._2 == previousState._2 + 1L)
+
+            //     allOf(Coll(
+            //         validSubNameTokenIdUpdate,
+            //         validIndexIncrement
+            //     ))
+
+            // }
+
+            val validSubName: Boolean = {
+
+                val tokenId: Option[Coll[Byte]] = previousRegistry.get(_subNameHash, _lookupProof)
+
+                if (tokenId.isDefined) {
+
+                    (tokenId.get == subNameTokenId)
+
+                } else {
+                    false
+                }
+
+            }
+
+            val validSubNameRemoval: Boolean = {
+
+                val newRegistry: AvlTree = previousRegistry.remove(Coll((_subNameHash, subNameTokenId)), _removeProof).get
 
                 (parentSubNameRegistryBoxOut.R4[AvlTree].get.digest == newRegistry.digest)
 
@@ -131,86 +272,38 @@
                     (parentSubNameRegistryBoxOut.value == SELF.value),
                     (parentSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                     (parentSubNameRegistryBoxOut.tokens(0) == SELF.tokens(0)),
+                    (parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == SELF.R5[(Coll[Byte], Long)].get),
                     (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get)
                 ))
 
             }
 
+            val validBurn: Boolean = {
+
+                OUTPUTS.forall{ (output: Box) => 
+                    output.tokens.forall{ (token: (Coll[Byte], Long)) =>
+                        (token._1 != subNameTokenId)
+                    }
+                }
+
+            }            
+
             allOf(Coll(
                 validStateUpdate,
-                validSubNameInsertion,
-                validSelfRecreation
+                validSubName,
+                validSubNameRemoval,
+                validSelfRecreation,
+                validBurn
             ))
 
         }
 
-        val validChildSubNameRegistryBoxOut: Boolean = {
+        sigmaProp(validSubNameSelfBurnTx)
 
-            val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
-
-            val validR5: Boolean = {
-                val r5 = childSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
-                r5._1.size == 0 && r5._2 == 0L
-            }
-
-            allOf(Coll(
-                (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
-                (childSubNameRegistryBoxOut.tokens(0) == (subNameTokenId, 1L)),
-                (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                validR5,
-                (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameTokenId)
-            ))
-
-        }
-
-        val validSubNameNftBoxOut: Boolean = {
-
-            allOf(Coll(
-                (subNameNftBoxOut.propositionBytes == receiverPKSigmaProp.propBytes),
-                (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L))
-            ))
-
-        }
-
-        val validErgoNameNftBoxOut: Boolean = {
-
-            allOf(Coll(
-                (ergoNameNftBoxOut.propositionBytes == receiverPKSigmaProp.propBytes),
-                (ergoNameNftBoxOut.tokens(0) == ergoNameNftBoxIn.tokens(0))
-            ))
-
-        }
-
-        val validMinerFee: Boolean = {
-
-            allOf(Coll(
-                (minerFeeBoxOut.value >= minMinerFee),
-                (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash),
-                (minerFeeBoxOut.tokens.size == 0)
-            ))
-
-        }
-
-        val validTxOperatorFeeBoxOut: Boolean = {
-
-            allOf(Coll(
-                (txOperatorFeeBoxOut.value >= minTxOperatorFee)
-            ))
-
-        }
-
-        allOf(Coll(
-            validParentErgoName,
-            validSubNameFormat,
-            validSubNameRegistryUpdate,
-            validChildSubNameRegistryBoxOut,
-            validSubNameNftBoxOut,
-            validErgoNameNftBoxOut,
-            validMinerFee,
-            validTxOperatorFee
-        ))
+    } else {
+        
+        sigmaProp(false)
 
     }
 
-    sigmaProp(validMintSubNameTx) || $ergonameMultiSigSigmaProp
 }

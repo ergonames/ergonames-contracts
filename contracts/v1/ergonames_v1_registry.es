@@ -163,8 +163,11 @@
 
                 val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
-                (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest)
-
+                allOf(Coll(
+                    (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
+                    (_ergoNameHash == blake2b256(ergoNameBytes))
+                ))
+              
             }
 
             val validSelfRecreation: Boolean = {
