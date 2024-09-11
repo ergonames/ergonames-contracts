@@ -8,7 +8,8 @@
 
     // ===== Box Contents ===== //
     // Tokens
-    // 1. (ErgoNameCollectionTokenId, Long.MaxValue)
+    // 1. (ErgoNameCollectionSingletonTokenId, 1L)
+    // 2. (ErgoNameCollectionTokenId, Long.MaxValue)
     // Registers
     // None
 
@@ -33,8 +34,8 @@
 
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val ergonameCollectionTokenId: Coll[Byte] = SELF.tokens(0)._1
-    val ergonameCollectionTokenAmount: Long = SELF.tokens(0)._2
+    val ergonameCollectionTokenId: Coll[Byte] = SELF.tokens(1)._1
+    val ergonameCollectionTokenAmount: Long = SELF.tokens(1)._2
     val isRefund: Boolean = (OUTPUTS.size == 4)
 
     if (!isRefund) {
@@ -58,7 +59,8 @@
                 allOf(Coll(
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
-                    (ergonameCollectionBoxOut.tokens(0) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount - 1L))
+                    (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
+                    (ergonameCollectionBoxOut.tokens(1) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount - 1L))
                 ))
 
             }
@@ -103,7 +105,8 @@
                 allOf(Coll(
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
-                    (ergonameCollectionBoxOut.tokens(0) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
+                    (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
+                    (ergonameCollectionBoxOut.tokens(1) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
                 ))
 
             }

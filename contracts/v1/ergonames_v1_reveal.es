@@ -103,11 +103,13 @@
             }
 
             val validCollectionTokenBurn = {
+
                 OUTPUTS.forall { (output: Box) =>
                     output.tokens.forall { (token: (Coll[Byte], Long)) =>
                         token._1 != collectionTokenId
                     }
                 }
+                
             }
 
             val validRevealBoxInValue: Boolean = {
