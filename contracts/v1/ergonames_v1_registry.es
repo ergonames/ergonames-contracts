@@ -22,8 +22,8 @@
     // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
-    // $subNameContractBytes: Coll[Byte]
-    // $ergoNameFeeContractBytes: Coll[Byte]
+    // $subNameContractBytesHash: Coll[Byte]
+    // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $sigUsdOracleSingletonTokenId: Coll[Byte]
     // $ergonameMultiSigSigmaProp: SigmaProp
@@ -33,24 +33,10 @@
     // _insertionProof: Coll[Byte]  - Proof that the ErgoNameHash and ErgoNameTokenId were inserted into the registry avl tree.
     // _lookupProof: Coll[Byte]     - Proof for getting a value from the config avl tree.
 
-    // ===== User-Defined Functions ===== //
+    // ===== User Defined Functions ===== //
     // def calcUsdPriceInCents: (Coll[Byte] => BigInt)
     // def isValidAscii: (Coll[Byte] => Boolean)
 
-    // ===== Relevant Variables ===== //
-    val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
-    val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
-    val ageThreshold: (Int, Int)            = SELF.R6[(Int, Int)].get
-    val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get
-    val minCommitBoxAge: Int                = ageThreshold._1
-    val maxCommitBoxAge: Int                = ageThreshold._2
-
-    val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](0).get
-    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
-
-    val isDefaultPaymentMode: Boolean = (CONTEXT.dataInputs.size == 1)
-
-    // ===== User-Defined Functions ===== //
     def calcUsdPrice(charsAndMap: (Coll[Byte], Coll[BigInt])): BigInt = {
 
         // We assume the input can be interpreted as a valid ascii char byte collection.
@@ -69,6 +55,7 @@
     }
 
     def isValidAscii(chars: Coll[Byte]): Boolean = {
+
         // Allowed ASCII characters (based on x.com handle format)
         val zero: Byte          = 48         // Numbers lower-bound
         val nine: Byte          = 57         // Numbers upper-bound
@@ -87,7 +74,21 @@
 
             isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore
         }
+
     }
+
+    // ===== Relevant Variables ===== //
+    val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
+    val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
+    val ageThreshold: (Int, Int)            = SELF.R6[(Int, Int)].get
+    val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get
+    val minCommitBoxAge: Int                = ageThreshold._1
+    val maxCommitBoxAge: Int                = ageThreshold._2
+
+    val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](0).get
+    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
+
+    val isDefaultPaymentMode: Boolean = (CONTEXT.dataInputs.size == 1)
 
     // ===== Mint ErgoName Tx ===== //
     val validMintErgoNameTx: Boolean = {
@@ -193,7 +194,7 @@
             val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
 
             allOf(Coll(
-                (subNameRegistryBoxOut.propositionBytes == $subNameContractBytes),
+                (blake2b256(subNameRegistryBoxOut.propositionBytes) == $subNameContractBytesHash),
                 (subNameRegistryBoxOut.tokens(0) == (ergoNameTokenId, 1L)), // We mint a token without following the asset standard, just used for identification purposes. This will have the same token id as the user's ErgoName.
                 (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
                 (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
@@ -215,7 +216,7 @@
             if (isDefaultPaymentMode) {
 
                 val validFeePayment: Boolean = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
-                val validFeeAddress: Boolean = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)
+                val validFeeAddress: Boolean = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
                 allOf(Coll(
                     validSigUsdOracle,
@@ -245,7 +246,7 @@
                     val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
                     val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
                     val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
-                    val validFeeAddress: Boolean                = (ergoNameFeeBoxOut.propositionBytes == $ergoNameFeeContractBytes)
+                    val validFeeAddress: Boolean                = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
                     allOf(Coll(
                         validSigUsdOracle,

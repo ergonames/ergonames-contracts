@@ -38,6 +38,31 @@
     // ===== Context Variables (_) ===== //
     // _ergoNameCollectionIssuerBox
 
+    // ===== User Defined Functions ===== //
+    // isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
+
+    def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
+
+        val prop: SigmaProp = propAndBox._1
+        val box: Box = propAndBox._2
+
+        val propBytes: Coll[Byte] = prop.propBytes
+        val treeBytes: Coll[Byte] = box.propositionBytes
+
+        if (treeBytes(0) == 0) {
+
+            (treeBytes == propBytes)
+
+        } else {
+
+            // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
+            val offset = if (treeBytes.size > 127) 3 else 2
+            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size)) 
+
+        }        
+
+    }
+
     // ===== Relevant Variables ===== //
     val revealData: (GroupElement, (Coll[Coll[Byte]], Coll[Long])) = SELF.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
     val userPKGroupElement: GroupElement = revealData._1
@@ -96,8 +121,10 @@
 
             val validErgoNameMint: Boolean = {
 
+                val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, ergonameIssuanceBoxOut)
+
                 allOf(Coll(
-                    (ergonameIssuanceBoxOut.propositionBytes == userPKSigmaProp.propBytes),
+                    isSigmaPropEqualToBoxProp(propAndBox),
                     (ergonameIssuanceBoxOut.tokens(0) == (SELF.id, 1L))
                 ))
 
@@ -197,9 +224,11 @@
 
             val validUser: Boolean = {
 
+                val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
+
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
-                    (userPKBoxOut.propositionBytes == userPKSigmaProp.propBytes)
+                    isSigmaPropEqualToBoxProp(propAndBox)
                 ))
 
             }

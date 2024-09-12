@@ -36,10 +36,10 @@
     // ===== Context Variables (_) ===== //
     // _action: Byte    - Byte representing the transaction type.
 
-    // ===== User-Defined Functions ===== //
+    // ===== User Defined Functions ===== //
     // def isValidAscii: (Coll[Byte] => Boolean)
+    // isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
 
-    // ===== User-Defined Functions ===== //
     def isValidAscii(chars: Coll[Byte]): Boolean = {
         // Allowed ASCII characters (based on x.com handle format)
         val zero: Byte          = 48         // Numbers lower-bound
@@ -59,6 +59,28 @@
 
             isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore
         }
+    }
+
+    def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
+
+        val prop: SigmaProp = propAndBox._1
+        val box: Box = propAndBox._2
+
+        val propBytes: Coll[Byte] = prop.propBytes
+        val treeBytes: Coll[Byte] = box.propositionBytes
+
+        if (treeBytes(0) == 0) {
+
+            (treeBytes == propBytes)
+
+        } else {
+
+            // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
+            val offset = if (treeBytes.size > 127) 3 else 2
+            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size)) 
+
+        }        
+
     }
 
     // ===== Relevant Variables ===== //
@@ -176,8 +198,10 @@
 
             val validSubNameNftBoxOut: Boolean = {
 
+                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, subNameNftBoxOut)
+
                 allOf(Coll(
-                    (subNameNftBoxOut.propositionBytes == receiverPKSigmaProp.propBytes),
+                    isSigmaPropEqualToBoxProp(propAndBox),
                     (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L))
                 ))
 
@@ -185,8 +209,10 @@
 
             val validErgoNameNftBoxOut: Boolean = {
 
+                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, ergoNameNftBoxOut)
+
                 allOf(Coll(
-                    (ergoNameNftBoxOut.propositionBytes == receiverPKSigmaProp.propBytes),
+                    isSigmaPropEqualToBoxProp(propAndBox),
                     (ergoNameNftBoxOut.tokens(0) == ergoNameNftBoxIn.tokens(0))
                 ))
 
@@ -299,9 +325,9 @@
             // _removeProof: Coll[Byte]     - Proof SubName was deleted from the avl tree.
 
             // ===== Relevant Variables ===== //
-            val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
-            val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
-            val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
+            val previousRegistry: AvlTree                   = SELF.R4[AvlTree].get
+            val previousState: (Coll[Byte], Long)           = SELF.R5[(Coll[Byte], Long)].get
+            val parentErgoNameTokenId: Coll[Byte]           = SELF.R6[Coll[Byte]].get
             val parentRegistrySingletonTokenId: Coll[Byte]  = SELF.tokens(0)._1
 
             val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](1).get

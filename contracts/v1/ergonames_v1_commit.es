@@ -32,9 +32,33 @@
     // ===== Context Variables (_) ===== //
     // None
 
-    val minerFeeErgoTreeHash = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
+    // ===== User Defined Functions ===== //
+    // isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
+
+    def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
+
+        val prop: SigmaProp = propAndBox._1
+        val box: Box = propAndBox._2
+
+        val propBytes: Coll[Byte] = prop.propBytes
+        val treeBytes: Coll[Byte] = box.propositionBytes
+
+        if (treeBytes(0) == 0) {
+
+            (treeBytes == propBytes)
+
+        } else {
+
+            // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
+            val offset = if (treeBytes.size > 127) 3 else 2
+            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size)) 
+
+        }        
+
+    }
 
     // ===== Relevant Variables ===== //
+    val minerFeeErgoTreeHash = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val userPKGroupElement: GroupElement = SELF.R5[GroupElement].get
     val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
     val minerFee: Long = SELF.R6[Long].get
@@ -76,9 +100,11 @@
 
             val validUser: Boolean = {
 
+                val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
+
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
-                    (userPKBoxOut.propositionBytes == userPKSigmaProp.propBytes)
+                    isSigmaPropEqualToBoxProp(propAndBox)
                 ))
 
             }

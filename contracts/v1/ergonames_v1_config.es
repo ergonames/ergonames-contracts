@@ -8,7 +8,7 @@
 
     // ===== Box Contents ===== //
     // Tokens
-    // 1. (ConfigSingleton, 1)
+    // 1. (ConfigSingleton, 1L)
     // Registers
     // R4: AvlTree  ConfigAvlTree
 
@@ -26,6 +26,9 @@
     // None
 
     // ===== Relevant Variables ===== //
+    // None
+
+    // ===== User Defined Functions ===== //
     // None
 
     $ergonameMultiSigSigmaProp
