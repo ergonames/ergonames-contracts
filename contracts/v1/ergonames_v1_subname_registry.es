@@ -38,7 +38,7 @@
 
     // ===== User Defined Functions ===== //
     // def isValidAscii: (Coll[Byte] => Boolean)
-    // isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
+    // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
 
     def isValidAscii(chars: Coll[Byte]): Boolean = {
         // Allowed ASCII characters (based on x.com handle format)

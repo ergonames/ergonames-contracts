@@ -33,7 +33,7 @@
     // None
 
     // ===== User Defined Functions ===== //
-    // isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
+    // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
 
     def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
 
