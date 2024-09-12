@@ -146,7 +146,11 @@
                 val validTokenValue: Boolean = {
 
                     if (isPayingWithToken) {
-                        (SELF.tokens(0)._2 == ergoNameFeeTokenAmount)
+
+                        val paymentTokenAmount: Long = SELF.tokens(1)._2
+
+                        (paymentTokenAmount == ergoNameFeeTokenAmount)
+                        
                     } else {
                         true
                     }

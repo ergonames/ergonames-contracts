@@ -8,7 +8,7 @@
 
     // ===== Box Contents ===== //
     // Tokens
-    // None
+    // 1. (PaymentTokenId, PaymentTokenAmount) // If ErgoName can be purchased with a custom token.
     // Registers
     // R4: Coll[Byte]       RevealBoxHash
     // R5: Long             MinerFee
@@ -35,6 +35,7 @@
     val revealBoxHash: Coll[Byte] = SELF.R4[Coll[Byte]].get
     val minerFee: Long = SELF.R5[Long].get
     val txOperatorFee: Long = SELF.R6[Long].get
+    val isPayingWithToken: Boolean = (SELF.tokens.size == 1)
 
     val validRevealTx: Boolean = {
 
@@ -51,9 +52,11 @@
         val validReveal: Boolean = {
             
             val revealHash: Coll[Byte] = blake2b256(revealBoxOut.bytesWithoutRef) // Bytes of box contents without transaction id and output index.
-            
+            val validPaymentToken: Boolean = isPayingWithToken ? (revealBoxOut.tokens(0) == SELF.tokens(0) : true)    
+
             allOf(Coll(
                 (revealBoxOut.value == SELF.value - minerFee - txOperatorFee),
+                validPaymentToken,
                 (revealHash == revealBoxHash)
             ))
 
