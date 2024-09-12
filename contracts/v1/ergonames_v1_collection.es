@@ -32,6 +32,9 @@
     // ===== Context Variables (_) ===== //
     // None
 
+    // ===== User Defined Functions ===== //
+    // None
+
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val ergonameCollectionTokenId: Coll[Byte] = SELF.tokens(1)._1
