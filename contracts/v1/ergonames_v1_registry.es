@@ -42,10 +42,9 @@
         // We assume the input can be interpreted as a valid ascii char byte collection.
 
         // USD price map in dollars, price map collection index is the amount of chars.
-        val priceMap: Coll[BigInt]          = SELF.R7[Coll[BigInt]].get
         val chars: Coll[Byte]               = charsAndMap._1
         val priceMapInner: Coll[BigInt]     = charsAndMap._2
-        val supremum: Int                   = (priceMap.size - 1)
+        val supremum: Int                   = (priceMapInner.size - 1)
 
         if (chars.size <= supremum) {
             priceMapInner(chars.size)
