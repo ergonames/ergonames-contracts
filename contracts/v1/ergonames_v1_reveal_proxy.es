@@ -46,13 +46,14 @@
         val ergonameCollectionBoxOut: Box = OUTPUTS(0)
         val revealBoxOut: Box = OUTPUTS(1)
         val minerFeeBoxOut: Box = OUTPUTS(2)
+        val txOperatorFeeBoxOut: Box = OUTPUTS(3)
 
         val validCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId)
 
         val validReveal: Boolean = {
-            
+
             val revealHash: Coll[Byte] = blake2b256(revealBoxOut.bytesWithoutRef) // Bytes of box contents without transaction id and output index.
-            val validPaymentToken: Boolean = isPayingWithToken ? (revealBoxOut.tokens(0) == SELF.tokens(0) : true)    
+            val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(0) == SELF.tokens(0)) else true
 
             allOf(Coll(
                 (revealBoxOut.value == SELF.value - minerFee - txOperatorFee),

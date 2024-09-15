@@ -31,6 +31,12 @@
     // ===== User Defined Functions ===== //
     // None
 
-    $ergonameMultiSigSigmaProp
+    val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+    val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+
+    val $addresses = Coll(address1, address2)
+    val $minRequiredSignatures = 1
+
+    atLeast($minRequiredSignatures, $addresses)
 
 }

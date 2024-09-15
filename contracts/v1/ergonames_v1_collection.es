@@ -65,10 +65,10 @@
 
             }
 
-            val validRevealProxy: Boolean = (blake2b256(revealBoxIn.propositionBytes) == $revealProxyErgoTreeBytesHash)
+            val validRevealProxy: Boolean = (blake2b256(revealProxyBoxIn.propositionBytes) == $revealProxyErgoTreeBytesHash)
 
             val validReveal: Boolean = {
-                               
+
                 allOf(Coll(
                     (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
                     (revealBoxOut.tokens(0) == (ergonameCollectionTokenId, 1L)),

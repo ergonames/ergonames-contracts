@@ -57,9 +57,9 @@
 
             // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
             val offset = if (treeBytes.size > 127) 3 else 2
-            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size)) 
+            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size))
 
-        }        
+        }
 
     }
 
@@ -137,7 +137,7 @@
                         token._1 != collectionTokenId
                     }
                 }
-                
+
             }
 
             val validRevealBoxInValue: Boolean = {
@@ -150,7 +150,7 @@
                         val paymentTokenAmount: Long = SELF.tokens(1)._2
 
                         (paymentTokenAmount == ergoNameFeeTokenAmount)
-                        
+
                     } else {
                         true
                     }

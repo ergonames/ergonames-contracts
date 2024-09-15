@@ -77,9 +77,9 @@
 
             // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
             val offset = if (treeBytes.size > 127) 3 else 2
-            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size)) 
+            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size))
 
-        }        
+        }
 
     }
 
@@ -229,9 +229,14 @@
 
         }
 
+        val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+
+        val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
+
         sigmaProp(validMintSubNameTx) || $ergonameMultiSigSigmaProp
 
-    } else if (_txType == 2.toByte) {
+    } else if (_action == 2.toByte) {
 
         // ===== SubName Self-Burn Tx ===== //
         val validSubNameSelfBurnTx: Boolean = {
@@ -257,7 +262,7 @@
             val parentSubNameRegistryBoxOut: Box = OUTPUTS(0)
 
             // Relevant Variables
-            val subnameTokenId: Coll[Byte] = userPkBoxIn.tokens(0)._1
+            val subNameTokenId: Coll[Byte] = userPkBoxIn.tokens(0)._1
 
             val validSubName: Boolean = {
 
@@ -295,13 +300,13 @@
 
             val validBurn: Boolean = {
 
-                OUTPUTS.forall{ (output: Box) => 
+                OUTPUTS.forall{ (output: Box) =>
                     output.tokens.forall{ (token: (Coll[Byte], Long)) =>
                         (token._1 != subNameTokenId)
                     }
                 }
 
-            }            
+            }
 
             allOf(Coll(
                 validSubName,
@@ -348,7 +353,7 @@
 
             val validSubName: Boolean = {
 
-                val tokenId: Option[Coll[Byte]] = previousRegistry.get(_subNameHash, _lookupProof)
+                val tokenId: Option[Coll[Byte]] = previousRegistry.get(_subNameHash, _containsProof)
 
                 tokenId.isDefined
 
@@ -371,17 +376,15 @@
                     (parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == SELF.R5[(Coll[Byte], Long)].get),
                     (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get)
                 ))
-
             }
 
             val validParentRecreation: Boolean = {
 
                 allOf(Coll(
-                    (userPkBoxOut.propositionBytes = userPkBoxIn.propositionBytes),
+                    (userPkBoxOut.propositionBytes == userPkBoxIn.propositionBytes),
                     (userPkBoxOut.tokens(0) == userPkBoxIn.tokens(0))
                 ))
-
-            }          
+            }
 
             allOf(Coll(
                 validParentSubName,
@@ -396,7 +399,7 @@
         sigmaProp(validSubNameParentBurnsChildTx)
 
     } else {
-        
+
         sigmaProp(false)
 
     }
