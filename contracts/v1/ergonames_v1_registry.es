@@ -44,7 +44,7 @@
         // USD price map in dollars, price map collection index is the amount of chars.
         val chars: Coll[Byte]               = charsAndMap._1
         val priceMapInner: Coll[BigInt]     = charsAndMap._2
-        val supremum: Int                   = (priceMap.size - 1)
+        val supremum: Int                   = (priceMapInner.size - 1)
 
         if (chars.size <= supremum) {
             priceMapInner(chars.size)
@@ -55,7 +55,6 @@
     }
 
     def isValidAscii(chars: Coll[Byte]): Boolean = {
-
         // Allowed ASCII characters (based on x.com handle format)
         val zero: Byte          = 48         // Numbers lower-bound
         val nine: Byte          = 57         // Numbers upper-bound
@@ -74,7 +73,6 @@
 
             isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore
         }
-
     }
 
     // ===== Relevant Variables ===== //
@@ -168,7 +166,7 @@
                     (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
                     (_ergoNameHash == blake2b256(ergoNameBytes))
                 ))
-              
+
             }
 
             val validSelfRecreation: Boolean = {
@@ -271,6 +269,11 @@
         ))
 
     }
+
+    val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+    val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+
+    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
 
     sigmaProp(validMintErgoNameTx) || $ergonameMultiSigSigmaProp
 
