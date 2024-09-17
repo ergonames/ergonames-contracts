@@ -160,7 +160,7 @@
 
             val validErgoNameInsertion: Boolean = {
 
-                val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
+               val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
                 allOf(Coll(
                     (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
@@ -174,7 +174,9 @@
                 allOf(Coll(
                     (registryBoxOut.value == SELF.value),
                     (registryBoxOut.propositionBytes == SELF.propositionBytes),
-                    (registryBoxOut.tokens(0) == SELF.tokens(0))
+                    (registryBoxOut.tokens(0) == SELF.tokens(0)),
+                    (registryBoxOut.R6[(Int, Int)].get == ageThreshold),
+                    (registryBoxOut.R7[Coll[BigInt]].get == priceMap)
                 ))
 
             }
@@ -213,7 +215,7 @@
 
             if (isDefaultPaymentMode) {
 
-                val validFeePayment: Boolean = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
+                val validFeePayment: Boolean = (10921937550L == equivalentNanoErg) // this needs to have buffer of maybe 5% each side since there can be changes to oracle price
                 val validFeeAddress: Boolean = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
                 allOf(Coll(
