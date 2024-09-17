@@ -202,6 +202,8 @@
                 validCommitBoxIn,
                 validSubNameRegistryAmount,
                 validErgonameIssuanceAmount,
+                validErgoNameMint,
+                validCollectionTokenBurn,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
                 (OUTPUTS.size == 6)
