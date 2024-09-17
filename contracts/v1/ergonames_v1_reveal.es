@@ -142,7 +142,7 @@
 
             val validRevealBoxInValue: Boolean = {
 
-                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuanceAmount + ergoNameFeeErgAmount + minerFeeAmount + txOperatorFeeAmount)
+                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuanceAmount + ergoNameFeeErgAmount + minerFeeAmount)
                 val validTokenValue: Boolean = {
 
                     if (isPayingWithToken) {
