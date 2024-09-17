@@ -59,7 +59,7 @@
         val validReveal: Boolean = {
 
             val revealHash: Coll[Byte] = blake2b256(revealBoxOut.bytesWithoutRef) // Bytes of box contents without transaction id and output index.
-            val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(0) == SELF.tokens(0)) else true
+            val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(1) == SELF.tokens(0)) else true
 
             allOf(Coll(
                 (revealBoxOut.value == SELF.value - minerFee - txOperatorFee),
