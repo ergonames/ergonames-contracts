@@ -48,7 +48,13 @@
         val minerFeeBoxOut: Box = OUTPUTS(2)
         val txOperatorFeeBoxOut: Box = OUTPUTS(3)
 
-        val validCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId)
+        val validCollection: Boolean = {
+
+            ergonameCollectionBoxIn.tokens.exists({ (t: (Coll[Byte], Long)) =>
+                t._1 == $ergoNameCollectionSingletonTokenId
+            })
+
+        }
 
         val validReveal: Boolean = {
 
