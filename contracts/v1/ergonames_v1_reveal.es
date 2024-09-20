@@ -142,7 +142,7 @@
 
             val validRevealBoxInValue: Boolean = {
 
-                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuanceAmount + ergoNameFeeErgAmount + minerFeeAmount + txOperatorFeeAmount)
+                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuanceAmount + ergoNameFeeErgAmount + minerFeeAmount)
                 val validTokenValue: Boolean = {
 
                     if (isPayingWithToken) {
@@ -202,6 +202,8 @@
                 validCommitBoxIn,
                 validSubNameRegistryAmount,
                 validErgonameIssuanceAmount,
+                validErgoNameMint,
+                validCollectionTokenBurn,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
                 (OUTPUTS.size == 6)
@@ -229,10 +231,12 @@
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
+                val validPaymentTokenTransfer: Boolean = if isPayingWithToken (userPKBoxOut.tokens(0) == SELF.tokens(1)) else (userPKBoxOut.tokens.size == 0)
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
-                    isSigmaPropEqualToBoxProp(propAndBox)
+                    isSigmaPropEqualToBoxProp(propAndBox),
+                    validPaymentTokenTransfer
                 ))
 
             }
@@ -241,7 +245,8 @@
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
-                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
+                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash),
+                    (minerFeeBoxOut.tokens.size == 0)
                 ))
 
             }
