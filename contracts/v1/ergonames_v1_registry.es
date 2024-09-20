@@ -215,7 +215,25 @@
 
             if (isDefaultPaymentMode) {
 
-                val validFeePayment: Boolean = (10921937550L == equivalentNanoErg) // this needs to have buffer of maybe 5% each side since there can be changes to oracle price
+                val validFeePayment: Boolean = {
+
+                    val amount: BigInt      = revealBoxIn.value.toBigInt // Reveal box contains target price when reveal was created + 5% slippage.
+                    val target: BigInt      = (amount * 100.toBigInt) / 105.toBigInt // 5% slippage
+                    val slippage: BigInt    = (amount - target)
+                    val difference: BigInt  = (equivalentNanoErg - target)
+                    val isWithin: Boolean   = (difference >= 0 && difference < slippage) || (difference <= 0 && difference > -1.toBigInt * slippage)
+                    
+                    val validFee: Boolean       = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
+                    val validChange: Boolean    = (ergoNameIssuanceBoxOut.value.toBigInt >= (amount - equivalentNanoErg))
+
+                    allOf(Coll(
+                        isWithin,
+                        validFee,
+                        validChange
+                    ))
+                    
+                }
+
                 val validFeeAddress: Boolean = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
                 allOf(Coll(
