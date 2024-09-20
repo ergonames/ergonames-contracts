@@ -139,7 +139,8 @@
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
-                    isSigmaPropEqualToBoxProp(propAndBox)
+                    isSigmaPropEqualToBoxProp(propAndBox),
+                    (userPKBoxOut.tokens == SELF.tokens)
                 ))
 
             }
