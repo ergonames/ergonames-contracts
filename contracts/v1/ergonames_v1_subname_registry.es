@@ -229,8 +229,8 @@
 
         }
 
-        val address1 = PK("3Wy7pdHGCRjfZJT3gHFSd6sHqa1Vyn4Xkh93VcLy7TH5CEi6jxVC")
-        val address2 = PK("3WwcNTWMqbJBVHpHGoxPdbc8stHCPbSNFD6zhBfYgFLKcS7gwKiT")
+        val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
+        val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
 
         val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
 
