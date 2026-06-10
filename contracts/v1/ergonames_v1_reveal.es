@@ -231,7 +231,7 @@
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
-                val validPaymentTokenTransfer: Boolean = if isPayingWithToken (userPKBoxOut.tokens(0) == SELF.tokens(1)) else (userPKBoxOut.tokens.size == 0)
+                val validPaymentTokenTransfer: Boolean = if (isPayingWithToken) (userPKBoxOut.tokens(0) == SELF.tokens(1)) else (userPKBoxOut.tokens.size == 0)
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
