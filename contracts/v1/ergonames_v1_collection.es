@@ -28,6 +28,8 @@
     // ===== Compile Time Constants ($) ===== //
     // $revealErgoTreeBytesHash: Coll[Byte]
     // $revealProxyErgoTreeBytesHash: Coll[Byte]
+    // $ergonameCollectionSingletonTokenId: Coll[Byte]
+    // $ergonameCollectionTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // None
@@ -37,8 +39,9 @@
 
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val ergonameCollectionTokenId: Coll[Byte] = SELF.tokens(1)._1
-    val ergonameCollectionTokenAmount: Long = SELF.tokens(1)._2
+    val ergonameCollectionTokenAmount = SELF.tokens.fold(0L, { (sum: Long, t: (Coll[Byte], Long)) =>
+        if (t._1 == $ergonameCollectionTokenId) sum + t._2 else sum
+    })
     val isRefund: Boolean = (OUTPUTS.size == 3)
 
     if (!isRefund) {
@@ -56,11 +59,27 @@
 
             val validSelfRecreation: Boolean = {
 
+                val validSingletonTransfer: Boolean = {
+
+                    ergonameCollectionBoxOut.tokens.exists({ (t: (Coll[Byte], Long)) =>
+                        t._1 == $ergonameCollectionSingletonTokenId
+                    })
+
+                }
+
+                val validCollectionTokensTransfer: Boolean = {
+
+                    ergonameCollectionBoxOut.tokens.exists({ (t: (Coll[Byte], Long)) =>
+                        t == ($ergonameCollectionTokenId, ergonameCollectionTokenAmount - 1L)
+                    })
+
+                }
+
                 allOf(Coll(
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
-                    (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
-                    (ergonameCollectionBoxOut.tokens(1) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount - 1L))
+                    validSingletonTransfer,
+                    validCollectionTokensTransfer
                 ))
 
             }
@@ -71,8 +90,8 @@
 
                 allOf(Coll(
                     (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
-                    (revealBoxOut.tokens(0) == (ergonameCollectionTokenId, 1L)),
-                    (revealBoxOut.R7[Coll[Byte]].get == ergonameCollectionTokenId), // For artwork standard v2 (EIP-24).
+                    (revealBoxOut.tokens(0) == ($ergonameCollectionTokenId, 1L)),
+                    (revealBoxOut.R7[Coll[Byte]].get == $ergonameCollectionTokenId), // For artwork standard v2 (EIP-24).
                 ))
 
             }
@@ -105,7 +124,7 @@
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
                     (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
-                    (ergonameCollectionBoxOut.tokens(1) == (ergonameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
+                    (ergonameCollectionBoxOut.tokens(1) == ($ergonameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
                 ))
 
             }
@@ -114,7 +133,7 @@
 
                 allOf(Coll(
                     (blake2b256(revealBoxIn.propositionBytes) == $revealErgoTreeBytesHash),
-                    (revealBoxIn.tokens(0) == (ergonameCollectionTokenId, 1L))
+                    (revealBoxIn.tokens(0) == ($ergonameCollectionTokenId, 1L))
                 ))
 
             }
