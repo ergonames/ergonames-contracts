@@ -223,13 +223,15 @@
                     val difference: BigInt  = (equivalentNanoErg - target)
                     val isWithin: Boolean   = (difference >= 0 && difference < slippage) || (difference <= 0 && difference > -1.toBigInt * slippage)
                     
+                    // NOTE: the former validChange check (issuance >= amount - equivalentNanoErg)
+                    // was unsatisfiable: reveal.es pins issuance == minBoxValue while the reveal
+                    // value equation forces amount - E >= 2*minBoxValue + minerFee. Overpayment is
+                    // already bounded by isWithin (~5% slippage) and flows to the fee box.
                     val validFee: Boolean       = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
-                    val validChange: Boolean    = (ergoNameIssuanceBoxOut.value.toBigInt >= (amount - equivalentNanoErg))
 
                     allOf(Coll(
                         isWithin,
-                        validFee,
-                        validChange
+                        validFee
                     ))
                     
                 }
