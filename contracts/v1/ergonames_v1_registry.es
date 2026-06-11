@@ -228,7 +228,7 @@
             val oracleHeight: Long                          = sigUsdOracleBoxIn.R5[Int].get
             val charsAndMap: (Coll[Byte], Coll[BigInt])     = (ergoNameBytes, priceMap)
             val price: BigInt                               = calcUsdPrice(charsAndMap)
-            val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price)
+            val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price) / 100.toBigInt // price map is in US cents
             val validSigUsdOracle: Boolean                  = (sigUsdOracleBoxIn.tokens(0)._1 == $sigUsdOracleSingletonTokenId)
 
             if (isDefaultPaymentMode) {
