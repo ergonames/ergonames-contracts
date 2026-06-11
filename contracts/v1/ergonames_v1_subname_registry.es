@@ -84,7 +84,13 @@
     }
 
     // ===== Relevant Variables ===== //
-    val _action: Byte = getVar[Byte](0).get
+    val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
+    val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
+    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
+
+    // Missing action byte falls through to the multisig escape hatch instead
+    // of throwing, which would make the box unspendable for migrations.
+    val _action: Byte = if (getVar[Byte](0).isDefined) getVar[Byte](0).get else 0.toByte
 
     if (_action == 1.toByte) {
 
@@ -228,11 +234,6 @@
             ))
 
         }
-
-        val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
-        val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
-
-        val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
 
         sigmaProp(validMintSubNameTx) || $ergonameMultiSigSigmaProp
 
@@ -400,7 +401,8 @@
 
     } else {
 
-        sigmaProp(false)
+        // Unknown/absent action: multisig escape hatch.
+        $ergonameMultiSigSigmaProp
 
     }
 

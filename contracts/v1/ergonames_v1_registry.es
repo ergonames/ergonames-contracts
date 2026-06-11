@@ -83,6 +83,25 @@
     val minCommitBoxAge: Int                = ageThreshold._1
     val maxCommitBoxAge: Int                = ageThreshold._2
 
+    val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
+    val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
+    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
+
+    // The mint validation dereferences inputs, outputs, and context variables
+    // that only exist in a well-formed mint tx; evaluating it in any other tx
+    // shape throws, which would make the multisig escape hatch unreachable.
+    // Guard it behind a structural check so non-mint spends fall through to
+    // the multisig branch.
+    val isMintShaped: Boolean = allOf(Coll(
+        (INPUTS.size >= 3),
+        (OUTPUTS.size == 6),
+        (CONTEXT.dataInputs.size >= 1),
+        getVar[Coll[Byte]](0).isDefined,
+        getVar[Coll[Byte]](1).isDefined
+    ))
+
+    if (isMintShaped) {
+
     val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](0).get
     val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
 
@@ -96,7 +115,6 @@
         val commitBoxIn: Box = INPUTS(2)
 
         // Outputs
-        val ergoNameIssuanceBoxOut: Box = OUTPUTS(0)
         val registryBoxOut: Box         = OUTPUTS(1)
         val subNameRegistryBoxOut: Box  = OUTPUTS(2)
         val ergoNameFeeBoxOut: Box      = OUTPUTS(3)
@@ -292,11 +310,12 @@
 
     }
 
-    val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
-    val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
-
-    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
-
     sigmaProp(validMintErgoNameTx) || $ergonameMultiSigSigmaProp
+
+    } else {
+
+        $ergonameMultiSigSigmaProp
+
+    }
 
 }
