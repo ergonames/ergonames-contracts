@@ -42,9 +42,17 @@
     val ergonameCollectionTokenAmount = SELF.tokens.fold(0L, { (sum: Long, t: (Coll[Byte], Long)) =>
         if (t._1 == $ergonameCollectionTokenId) sum + t._2 else sum
     })
-    val isRefund: Boolean = (OUTPUTS.size == 3)
+    val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
+    val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
+    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
 
-    if (!isRefund) {
+    // Shape guards: reveal txs have 4 outputs, refunds 3; anything else falls
+    // through to the multisig escape hatch (migrations use 2 outputs) instead
+    // of throwing inside a branch and locking the collection box forever.
+    val isRevealShaped: Boolean = (OUTPUTS.size == 4) && (INPUTS.size >= 2)
+    val isRefundShaped: Boolean = (OUTPUTS.size == 3) && (INPUTS.size >= 2)
+
+    if (isRevealShaped) {
 
         val validRevealTx: Boolean = {
 
@@ -106,7 +114,7 @@
 
         sigmaProp(validRevealTx)
 
-    } else {
+    } else if (isRefundShaped) {
 
         val validRefundTx: Boolean = {
 
@@ -146,6 +154,10 @@
         }
 
         sigmaProp(validRefundTx)
+
+    } else {
+
+        $ergonameMultiSigSigmaProp
 
     }
 
