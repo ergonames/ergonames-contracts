@@ -197,6 +197,27 @@
 
             }
 
+            // H1: cap the minted name-token supply. The minted id == SELF.id (the
+            // reveal box id); Ergo lets a tx mint an arbitrary TOTAL of that id, so
+            // an unconstrained output (e.g. the tx-operator fee box) could otherwise
+            // carry (SELF.id, 1_000_000). Pin the id to appear ONLY at
+            // OUTPUTS(0).tokens(0) (the ErgoName NFT) and OUTPUTS(2).tokens(0) (the
+            // subname-registry identifier), each exactly (SELF.id, 1L) — so the total
+            // minted supply is exactly 2 and no extra output/slot can duplicate it.
+            val validNameTokenSupply: Boolean = {
+                val minted: Coll[Byte] = SELF.id
+                val sanctionedOnly: Boolean = OUTPUTS.indices.forall { (i: Int) =>
+                    OUTPUTS(i).tokens.indices.forall { (j: Int) =>
+                        (OUTPUTS(i).tokens(j)._1 != minted) || ((i == 0 || i == 2) && (j == 0))
+                    }
+                }
+                allOf(Coll(
+                    (OUTPUTS(0).tokens(0) == (minted, 1L)),
+                    (OUTPUTS(2).tokens(0) == (minted, 1L)),
+                    sanctionedOnly
+                ))
+            }
+
             allOf(Coll(
                 validRevealBoxInValue,
                 validCommitBoxIn,
@@ -204,6 +225,7 @@
                 validErgonameIssuanceAmount,
                 validErgoNameMint,
                 validCollectionTokenBurn,
+                validNameTokenSupply,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
                 (OUTPUTS.size == 6)

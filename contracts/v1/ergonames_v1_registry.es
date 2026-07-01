@@ -22,6 +22,7 @@
     // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
+    // $revealContractBytesHash: Coll[Byte]
     // $subNameContractBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
@@ -185,7 +186,13 @@
                val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
                 allOf(Coll(
-                    (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
+                    // H2: pin the FULL tree config (digest + insert flag + keyLength),
+                    // not just the digest — else a mint-tx builder can recreate R4 with
+                    // the same digest but insert DISABLED, permanently bricking every
+                    // future mint (previousRegistry.insert returns None → .get throws).
+                    // AvlTree `==` compares all fields; newRegistry carries previous-
+                    // Registry's flags/keyLength, so this also keeps insert enabled.
+                    (registryBoxOut.R4[AvlTree].get == newRegistry),
                     (_ergoNameHash == blake2b256(ergoNameBytes))
                 ))
 
@@ -268,43 +275,28 @@
 
             } else {
 
-                val ergoDexErg2TokenPoolBoxIn: Box              = CONTEXT.dataInputs(1)
-                val configBoxIn: Box                            = CONTEXT.dataInputs(2)
-
-                val paymentTokenId: Coll[Byte]                  = revealBoxIn.tokens(0)._1
-                val configAvlTree: AvlTree                      = configBoxIn.R4[AvlTree].get
-                val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](2).get
-                val configElement: Coll[Byte]                   = configAvlTree.get(paymentTokenId, _lookupProof)
-
-                if (configElement.isEmpty) {
-                    false
-                } else {
-
-                    val ergoDexErg2TokenPoolId: Coll[Byte]      = configElement.get.slice(0, 32)
-                    val nanoErgVolume_2: BigInt                 = ergoDexErg2TokenPoolBoxIn.value
-                    val tokenVolume_2: BigInt                   = ergoDexErg2TokenPoolBoxIn.tokens(2)._2
-                    val equivalentPaymentTokenAmount: BigInt    = (tokenVolume_2 * equivalentNanoErg) / nanoErgVolume_2
-
-                    val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
-                    val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
-                    val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
-                    val validFeeAddress: Boolean                = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
-
-                    allOf(Coll(
-                        validSigUsdOracle,
-                        validConfigBoxIn,
-                        validErgoDexErg2TokenPool,
-                        validFeePayment,
-                        validFeeAddress
-                    ))
-
-                }
+                // M2: token payments are DISABLED at genesis. The token path derived
+                // the price from instantaneous ErgoDex pool reserves with NO slippage
+                // bound or oracle anchoring (the ERG path enforces ±5% via isWithin),
+                // so a pool imbalance could over/underprice a name. Any non-default
+                // payment mode is rejected here; the token-payment path must be
+                // rebuilt (SigUSD-oracle-anchored + a slippage window) and re-audited
+                // before re-enabling. The genesis config tree also stays empty.
+                false
 
             }
 
         }
 
+        // M1: authenticate INPUTS(0) as the real reveal contract. Without this an
+        // attacker can pass their own P2PK box with a crafted R9 as INPUTS(0),
+        // bypassing reveal.es (no collection token burned) yet still inserting a
+        // name into the authoritative AVL tree. reveal.es itself authenticates the
+        // commit box, so this single binding secures the whole mint input chain.
+        val validRevealBoxAuth: Boolean = (blake2b256(revealBoxIn.propositionBytes) == $revealContractBytesHash)
+
         allOf(Coll(
+            validRevealBoxAuth,
             validErgoNameFormat,
             validCommit,
             validRegistryUpdate,
