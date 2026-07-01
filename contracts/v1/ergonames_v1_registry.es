@@ -307,6 +307,16 @@
         // bypassing reveal.es (no collection token burned) yet still inserting a
         // name into the authoritative AVL tree. reveal.es itself authenticates the
         // commit box, so this single binding secures the whole mint input chain.
+        //
+        // REVIEW NOTE (Luca — pick one): this hash check couples registry
+        // compilation to the reveal contract (registry must be compiled AFTER
+        // reveal, and $revealContractBytesHash injected). A self-contained
+        // alternative with no compile-order coupling is:
+        //     revealBoxIn.tokens(0) == ($ergoNameCollectionTokenId, 1L)
+        // The collection token is minted once at genesis and can only ever sit in
+        // the collection box or a reveal box — collection.es only ever sends it to
+        // a reveal box, and reveal.es burns it at mint / returns it at refund — so
+        // it can never reach an attacker's P2PK box. Sound but more indirect.
         val validRevealBoxAuth: Boolean = (blake2b256(revealBoxIn.propositionBytes) == $revealContractBytesHash)
 
         allOf(Coll(
