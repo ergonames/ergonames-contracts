@@ -105,6 +105,20 @@
         getVar[Coll[Byte]](1).isDefined
     ))
 
+    // Burn ErgoName gate. `allOf` does NOT short-circuit, so reading getVar(3).get
+    // unconditionally would throw on non-burn spends and brick the escape hatch
+    // (an H4-class trap); extract the action defensively. Only a deliberately
+    // burn-shaped tx (not mint-shaped, burn action byte == 1, the 3 proofs set)
+    // enters the burn branch below.
+    val burnAction: Int = if (getVar[Byte](3).isDefined) getVar[Byte](3).get.toInt else -1
+    val burnRequested: Boolean = allOf(Coll(
+        !isMintShaped,
+        (burnAction == 1),
+        getVar[Coll[Byte]](0).isDefined,   // ErgoNameHash
+        getVar[Coll[Byte]](1).isDefined,   // LookUpProof
+        getVar[Coll[Byte]](2).isDefined    // RemoveProof
+    ))
+
     if (isMintShaped) {
 
     val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](0).get
@@ -310,6 +324,72 @@
     // below. A mint-shaped tx must satisfy validMint — the multisig can no
     // longer override mint validation to seize the user's boxes.
     sigmaProp(validMintErgoNameTx)
+
+    } else if (burnRequested) {
+
+        // ===== Burn ErgoName Tx (the owner permanently deletes their name) =====
+        // Owner-authorised implicitly: spending INPUTS(1) (the ErgoName NFT box)
+        // requires the owner's signature — so providing it IS the authorisation.
+        // Mirrors the subname self-burn. The name becomes re-registrable.
+        val validBurnErgoNameTx: Boolean = {
+
+            val _burnErgoNameHash: Coll[Byte] = getVar[Coll[Byte]](0).get
+            val _burnLookupProof: Coll[Byte]  = getVar[Coll[Byte]](1).get
+            val _burnRemoveProof: Coll[Byte]  = getVar[Coll[Byte]](2).get
+
+            val ergoNameNftBoxIn: Box   = INPUTS(1)
+            val burnRegistryBoxOut: Box = OUTPUTS(0)
+            val burnedTokenId: Coll[Byte] = ergoNameNftBoxIn.tokens(0)._1
+
+            // Bind the removed name to the owned token: the registry must map this
+            // name to exactly the token being burned (can't remove name B while
+            // burning token A, nor remove a name you don't hold).
+            val validErgoName: Boolean = {
+                val tokenId: Option[Coll[Byte]] = previousRegistry.get(_burnErgoNameHash, _burnLookupProof)
+                if (tokenId.isDefined) { (tokenId.get == burnedTokenId) } else { false }
+            }
+
+            // Remove the name from the AVL tree. REQUIRES the genesis tree created
+            // with removeAllowed = true (see H2). Full-config `==` (not just
+            // .digest) pins the flags so the recreated tree keeps insert + remove
+            // enabled — same H2 hardening as the mint path.
+            val validRemoval: Boolean = {
+                val newRegistry: AvlTree = previousRegistry.remove(Coll(_burnErgoNameHash), _burnRemoveProof).get
+                (burnRegistryBoxOut.R4[AvlTree].get == newRegistry)
+            }
+
+            // The ErgoName token is destroyed: it appears in NO output.
+            val validBurn: Boolean = {
+                OUTPUTS.forall { (o: Box) =>
+                    o.tokens.forall { (t: (Coll[Byte], Long)) => (t._1 != burnedTokenId) }
+                }
+            }
+
+            // Registry recreated unchanged except its (now-smaller) tree — the
+            // cumulative state counter, age threshold and price map are preserved.
+            val validSelfRecreation: Boolean = {
+                allOf(Coll(
+                    (burnRegistryBoxOut.value == SELF.value),
+                    (burnRegistryBoxOut.propositionBytes == SELF.propositionBytes),
+                    (burnRegistryBoxOut.tokens(0) == SELF.tokens(0)),
+                    (burnRegistryBoxOut.R5[(Coll[Byte], Long)].get == previousState),
+                    (burnRegistryBoxOut.R6[(Int, Int)].get == ageThreshold),
+                    (burnRegistryBoxOut.R7[Coll[BigInt]].get == priceMap)
+                ))
+            }
+
+            allOf(Coll(
+                validErgoName,
+                validRemoval,
+                validBurn,
+                validSelfRecreation
+            ))
+
+        }
+
+        // H3-correct: NO || multisig. A malformed burn simply fails; migrations
+        // set no burn vars and fall through to the multisig `else` below.
+        sigmaProp(validBurnErgoNameTx)
 
     } else {
 
