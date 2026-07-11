@@ -226,12 +226,12 @@
             val userPKBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
 
-            val validErgoNameCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId)
+            val validErgoNameCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId) // If ErgoName collection token amount is Long.MaxValue, we can just burn the token, no need for this check.
 
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
-                val validPaymentTokenTransfer: Boolean = if isPayingWithToken (userPKBoxOut.tokens(0) == SELF.tokens(1)) else (userPKBoxOut.tokens.size == 0)
+                val validPaymentTokenTransfer: Boolean = if (isPayingWithToken) (userPKBoxOut.tokens(0) == SELF.tokens(1)) else (userPKBoxOut.tokens.size == 0)
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
