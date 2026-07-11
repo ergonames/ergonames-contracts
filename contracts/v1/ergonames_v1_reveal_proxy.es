@@ -2,7 +2,7 @@
 
     // ===== Contract Description ===== //
     // Name: ErgoNames Reveal Proxy
-    // Description: Contract holding the ErgoName collecion tokens.
+    // Description: Proxy contract used to properly create the reveal box.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
