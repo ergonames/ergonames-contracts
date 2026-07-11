@@ -160,7 +160,7 @@
 
             val validErgoNameInsertion: Boolean = {
 
-                val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
+               val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
                 allOf(Coll(
                     (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
@@ -174,7 +174,9 @@
                 allOf(Coll(
                     (registryBoxOut.value == SELF.value),
                     (registryBoxOut.propositionBytes == SELF.propositionBytes),
-                    (registryBoxOut.tokens(0) == SELF.tokens(0))
+                    (registryBoxOut.tokens(0) == SELF.tokens(0)),
+                    (registryBoxOut.R6[(Int, Int)].get == ageThreshold),
+                    (registryBoxOut.R7[Coll[BigInt]].get == priceMap)
                 ))
 
             }
@@ -213,7 +215,25 @@
 
             if (isDefaultPaymentMode) {
 
-                val validFeePayment: Boolean = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
+                val validFeePayment: Boolean = {
+
+                    val amount: BigInt      = revealBoxIn.value.toBigInt // Reveal box contains target price when reveal was created + 5% slippage.
+                    val target: BigInt      = (amount * 100.toBigInt) / 105.toBigInt // 5% slippage
+                    val slippage: BigInt    = (amount - target)
+                    val difference: BigInt  = (equivalentNanoErg - target)
+                    val isWithin: Boolean   = (difference >= 0 && difference < slippage) || (difference <= 0 && difference > -1.toBigInt * slippage)
+                    
+                    val validFee: Boolean       = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
+                    val validChange: Boolean    = (ergoNameIssuanceBoxOut.value.toBigInt >= (amount - equivalentNanoErg))
+
+                    allOf(Coll(
+                        isWithin,
+                        validFee,
+                        validChange
+                    ))
+                    
+                }
+
                 val validFeeAddress: Boolean = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
                 allOf(Coll(

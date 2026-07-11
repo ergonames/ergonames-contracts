@@ -125,7 +125,7 @@
 
         }
 
-        sigmaProp(validRefundTx)
+        sigmaProp(validRefundTx) && userPKSigmaProp
 
     }
 
