@@ -16,7 +16,7 @@
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
     // Inputs: Reveal, Registry, Commit
-    // Data Inputs: SigUsdOracleDatapoint, ?ErgoDexErg2Token, ?Config
+    // Data Inputs: USDv2OracleDatapoint, ?ErgoDexErg2Token, ?Config
     // Outputs: ErgoNameIssuance, Registry, SubNameRegistry, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: None
     // 2. Refund
