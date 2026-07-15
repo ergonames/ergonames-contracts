@@ -74,7 +74,6 @@
     val txOperatorFee: Long = revealData._2._2(1)
     val minBoxValue: Long = revealData._2._2(2)
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val isPayingWithToken: Boolean = (SELF.tokens.size == 2)
     val isRefund: Boolean = (OUTPUTS.size == 3)
     val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
@@ -96,14 +95,6 @@
             val ergoNameFeeBoxOut: Box = OUTPUTS(3)
             val minerFeeBoxOut: Box = OUTPUTS(4)
             val txOperatorFeeBoxOut: Box = OUTPUTS(5)
-
-            // Relevant Variables
-            val subNameRegistryAmount: Long = subNameRegistryBoxOut.value
-            val ergoNameIssuanceAmount: Long = ergonameIssuanceBoxOut.value
-            val ergoNameFeeErgAmount: Long = if (!isPayingWithToken) ergoNameFeeBoxOut.value else minBoxValue
-            val ergoNameFeeTokenAmount: Long  = if (isPayingWithToken) ergoNameFeeBoxOut.tokens(0)._2 else 0L
-            val minerFeeAmount: Long = minerFeeBoxOut.value
-            val txOperatorFeeAmount: Long = txOperatorFeeBoxOut.value
 
             val validErgoNameCollection: Boolean = {
 
@@ -140,30 +131,9 @@
 
             }
 
-            val validRevealBoxInValue: Boolean = {
-
-                val validErgValue: Boolean = (SELF.value == subNameRegistryAmount + ergoNameIssuanceAmount + ergoNameFeeErgAmount + minerFeeAmount)
-                val validTokenValue: Boolean = {
-
-                    if (isPayingWithToken) {
-
-                        val paymentTokenAmount: Long = SELF.tokens(1)._2
-
-                        (paymentTokenAmount == ergoNameFeeTokenAmount)
-
-                    } else {
-                        true
-                    }
-
-                }
-
-                allOf(Coll(
-                    validErgValue,
-                    validTokenValue
-                ))
-
-            }
-
+            // Reveal box validates correct commit box.
+            // Commit box validates correct registry.
+            // Registry handles propery payment check.
             val validCommitBoxIn: Boolean = {
 
                 allOf(Coll(
@@ -173,10 +143,10 @@
                 ))
 
             }
+            
+            val validErgonameIssuanceAmount: Boolean = (ergonameIssuanceBoxOut.value >= minBoxValue) // It would equal this if the price had maximum slippage, i.e. no change for the user.
 
-            val validSubNameRegistryAmount: Boolean = (subNameRegistryAmount == minBoxValue)
-
-            val validErgonameIssuanceAmount: Boolean = (ergoNameIssuanceAmount == minBoxValue)
+            val validSubNameRegistryAmount: Boolean = (subNameRegistryBoxOut.value == minBoxValue)
 
             val validMinerFeeBoxOut: Boolean = {
 
@@ -231,7 +201,7 @@
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
-                val validPaymentTokenTransfer: Boolean = if (isPayingWithToken) (userPKBoxOut.tokens(0) == SELF.tokens(1)) else (userPKBoxOut.tokens.size == 0)
+                val validPaymentTokenTransfer: Boolean = (userPKBoxOut.tokens() == SELF.tokens())
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),

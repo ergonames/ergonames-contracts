@@ -17,7 +17,7 @@
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
     // Inputs: Reveal, Registry, Commit
-    // Data Inputs: SigUsdOracleDatapoint, ?ErgoDexErg2Token, ?Config
+    // Data Inputs: USDv2OracleDatapoint, ?ErgoDexErg2Token, ?Config
     // Outputs: ErgoNameIssuance, Registry, SubNameRegistry, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
 
@@ -25,7 +25,7 @@
     // $subNameContractBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
-    // $sigUsdOracleSingletonTokenId: Coll[Byte]
+    // $usdV2OracleSingletonTokenId: Coll[Byte]
     // $ergonameMultiSigSigmaProp: SigmaProp
 
     // ===== Context Variables (_) ===== //
@@ -205,26 +205,28 @@
 
         val validErgoNameFeeBoxOut: Boolean = {
 
-            val sigUsdOracleBoxIn: Box                      = CONTEXT.dataInputs(0)
-            val nanoErgPerUsd: Long                         = sigUsdOracleBoxIn.R4[Long].get
-            val oracleHeight: Long                          = sigUsdOracleBoxIn.R5[Int].get
+            val usdV2OracleDatapoint: Box                   = CONTEXT.dataInputs(0)
+            val nanoErgPerUsd: Long                         = usdV2OracleDatapoint.R4[Long].get
             val charsAndMap: (Coll[Byte], Coll[BigInt])     = (ergoNameBytes, priceMap)
             val price: BigInt                               = calcUsdPrice(charsAndMap)
             val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price)
-            val validSigUsdOracle: Boolean                  = (sigUsdOracleBoxIn.tokens(0)._1 == $sigUsdOracleSingletonTokenId)
+            
+            val validUsdOracle: Boolean                     = (usdV2OracleDatapoint.tokens(0)._1 == $usdV2OracleSingletonTokenId)
+            val validFeeAddress: Boolean                    = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
             if (isDefaultPaymentMode) {
 
                 val validFeePayment: Boolean = {
 
-                    val amount: BigInt      = revealBoxIn.value.toBigInt // Reveal box contains target price when reveal was created + 5% slippage.
+                    val minBoxValue: Long   = subNameRegistryBoxOut.value
+                    val amount: BigInt      = revealBoxIn.value.toBigInt - minerFeeBoxOut.value - subNameRegistryBoxOut.value - minBoxValue // Reveal box contains minerFee + subNameRegistry + minBox + payment
                     val target: BigInt      = (amount * 100.toBigInt) / 105.toBigInt // 5% slippage
                     val slippage: BigInt    = (amount - target)
                     val difference: BigInt  = (equivalentNanoErg - target)
                     val isWithin: Boolean   = (difference >= 0 && difference < slippage) || (difference <= 0 && difference > -1.toBigInt * slippage)
                     
-                    val validFee: Boolean       = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
-                    val validChange: Boolean    = (ergoNameIssuanceBoxOut.value.toBigInt >= (amount - equivalentNanoErg))
+                    val validFee: Boolean     = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
+                    val validChange: Boolean  = (ergoNameIssuanceBoxOut.value.toBigInt >= (amount - equivalentNanoErg)) // Ensures that the user gets money back. 
 
                     allOf(Coll(
                         isWithin,
@@ -234,10 +236,8 @@
                     
                 }
 
-                val validFeeAddress: Boolean = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
-
                 allOf(Coll(
-                    validSigUsdOracle,
+                    validUsdOracle,
                     validFeePayment,
                     validFeeAddress
                 ))
@@ -264,10 +264,9 @@
                     val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
                     val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
                     val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
-                    val validFeeAddress: Boolean                = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
 
                     allOf(Coll(
-                        validSigUsdOracle,
+                        validUsdOracle,
                         validConfigBoxIn,
                         validErgoDexErg2TokenPool,
                         validFeePayment,
@@ -292,9 +291,9 @@
 
     val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
     val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+    //val address3 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+    //val address4 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
 
-    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
-
-    sigmaProp(validMintErgoNameTx) || $ergonameMultiSigSigmaProp
+    sigmaProp(validMintErgoNameTx) || atLeast(1, Coll(address1, address2))
 
 }
