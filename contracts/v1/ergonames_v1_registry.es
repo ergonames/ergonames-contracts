@@ -41,7 +41,7 @@
 
         // We assume the input can be interpreted as a valid ascii char byte collection.
 
-        // USD price map in dollars, price map collection index is the amount of chars.
+        // USD price map in cents, price map collection index is the amount of chars.
         val chars: Coll[Byte]               = charsAndMap._1
         val priceMapInner: Coll[BigInt]     = charsAndMap._2
         val supremum: Int                   = (priceMapInner.size - 1)
@@ -79,7 +79,7 @@
     val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
     val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
     val ageThreshold: (Int, Int)            = SELF.R6[(Int, Int)].get
-    val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get
+    val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get // Price in cents.
     val minCommitBoxAge: Int                = ageThreshold._1
     val maxCommitBoxAge: Int                = ageThreshold._2
 
@@ -210,7 +210,7 @@
             val validErgoNameFeeBoxOut: Boolean = {
 
                 val usdV2OracleDatapoint: Box                   = CONTEXT.dataInputs(0)
-                val nanoErgPerUsd: Long                         = usdV2OracleDatapoint.R4[Long].get
+                val nanoErgPerUsd: Long                         = usdV2OracleDatapoint.R4[Long].get / 100L // Price is now in cents.
                 val charsAndMap: (Coll[Byte], Coll[BigInt])     = (ergoNameBytes, priceMap)
                 val price: BigInt                               = calcUsdPrice(charsAndMap)
                 val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price)

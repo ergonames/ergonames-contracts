@@ -107,7 +107,7 @@
 
         sigmaProp(validRevealTx)
 
-    } else {
+    } else if (_action == 2) {
 
         val validRefundTx: Boolean = {
 
@@ -147,6 +147,18 @@
         }
 
         sigmaProp(validRefundTx)
+
+    } else {
+
+        val adoo = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        val lgd = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        val balb = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        val mgpai = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
+        val minRequiredSignatures = 2
+        val ergonameMultiSigSigmaProp = atLeast(minRequiredSignatures, addresses)
+
+        ergonameMultiSigSigmaProp
 
     }
 

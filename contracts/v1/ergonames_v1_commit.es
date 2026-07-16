@@ -66,7 +66,7 @@
     val isOldEnough: Boolean = HEIGHT - creationHeight >= $maxCommitBoxAge
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
-    val isRefund: Boolean = (_action == 0) && isOldEnough
+    val isRefund: Boolean = (_action == 2) && isOldEnough
 
 
     if (_action == 1) {
