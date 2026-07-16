@@ -34,7 +34,7 @@
     // None
 
     // ===== Context Variables (_) ===== //
-    // _action: Byte    - Byte representing the transaction type.
+    // _action: Int     - Integer representing the transaction type.
 
     // ===== User Defined Functions ===== //
     // def isValidAscii: (Coll[Byte] => Boolean)
@@ -84,9 +84,9 @@
     }
 
     // ===== Relevant Variables ===== //
-    val _action: Byte = getVar[Byte](0).get
+    val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
-    if (_action == 1.toByte) {
+    if (_action == 1) {
 
         // ===== Mint SubName Tx ===== //
         val validMintSubNameTx: Boolean = {
@@ -229,14 +229,9 @@
 
         }
 
-        val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-        val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        sigmaProp(validMintSubNameTx)
 
-        val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
-
-        sigmaProp(validMintSubNameTx) || $ergonameMultiSigSigmaProp
-
-    } else if (_action == 2.toByte) {
+    } else if (_action == 2) {
 
         // ===== SubName Self-Burn Tx ===== //
         val validSubNameSelfBurnTx: Boolean = {
@@ -319,7 +314,7 @@
 
         sigmaProp(validSubNameSelfBurnTx)
 
-    } else if (_action == 3.toByte) {
+    } else if (_action == 3) {
 
         // ===== SubName Parent Burns Child Tx ===== //
         val validSubNameParentBurnsChildTx: Boolean = {
@@ -400,7 +395,11 @@
 
     } else {
 
-        sigmaProp(false)
+        val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        //val address3 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        //val address4 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        atLeast(1, Coll(address1, address2))
 
     }
 
