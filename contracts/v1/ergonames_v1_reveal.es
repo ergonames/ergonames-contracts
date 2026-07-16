@@ -36,7 +36,8 @@
     // $ergoNameCollectionTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
-    // _ergoNameCollectionIssuerBox
+    // _action: Int
+    // _ergoNameCollectionIssuerBox: Box
 
     // ===== User Defined Functions ===== //
     // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
@@ -78,9 +79,9 @@
     val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
 
-    val _ergoNameCollectionIssuerBox: Box = getVar[Box](0).get
+    val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
-    if (!isRefund) {
+    if (_action == 1) {
 
         // ===== Mint ErgoName Tx ===== //
         val validMintErgoNameTx: Boolean = {
@@ -95,6 +96,8 @@
             val ergoNameFeeBoxOut: Box = OUTPUTS(3)
             val minerFeeBoxOut: Box = OUTPUTS(4)
             val txOperatorFeeBoxOut: Box = OUTPUTS(5)
+
+            val _ergoNameCollectionIssuerBox: Box = getVar[Box](1).get
 
             val validErgoNameCollection: Boolean = {
 

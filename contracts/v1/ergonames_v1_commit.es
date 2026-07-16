@@ -30,7 +30,7 @@
     // $maxCommitBoxAge: Int
 
     // ===== Context Variables (_) ===== //
-    // None
+    // _action: Int
 
     // ===== User Defined Functions ===== //
     // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
@@ -64,9 +64,12 @@
     val minerFee: Long = SELF.R6[Long].get
     val creationHeight: Int = SELF.creationInfo._1
     val isOldEnough: Boolean = HEIGHT - creationHeight >= $maxCommitBoxAge
-    val isRefund: Boolean = (OUTPUTS.size == 2) && isOldEnough
 
-    if (!isRefund) {
+    val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
+    val isRefund: Boolean = (_action == 0) && isOldEnough
+
+
+    if (_action == 1) {
 
         // ===== Mint ErgoName Tx ===== //
         val validMintErgoNameTx: Boolean = {
@@ -89,7 +92,7 @@
 
         sigmaProp(validMintErgoNameTx)
 
-    } else {
+    } else if (isRefund) {
 
         // ===== Refund Tx ===== //
         val validRefundTx: Boolean = {
@@ -127,6 +130,8 @@
 
         sigmaProp(validRefundTx) && userPKSigmaProp
 
+    } else {
+        sigmaProp(false)
     }
 
 }

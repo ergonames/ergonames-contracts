@@ -29,14 +29,14 @@
     // None
 
     // ===== Relevant Variables ===== //
-    val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-    val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-    //val address3 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-    //val address4 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+    val adoo = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+    val lgd = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+    val balb = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+    val mgpai = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+    val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
+    val minRequiredSignatures = 2
+    val ergonameMultiSigSigmaProp = atLeast(minRequiredSignatures, addresses)
 
-    val addresses = Coll(address1, address2)
-    val minRequiredSignatures = 1
-
-    atLeast(minRequiredSignatures, addresses)
+    ergonameMultiSigSigmaProp
 
 }

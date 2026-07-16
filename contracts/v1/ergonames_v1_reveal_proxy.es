@@ -31,7 +31,7 @@
     // $ergoNameCollectionSingletonTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
-    // None
+    // _action: Int
 
     // ===== User Defined Functions ===== //
     // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
@@ -66,9 +66,10 @@
     val userPKGroupElement: GroupElement = SELF.R7[GroupElement].get
     val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
     val isPayingWithToken: Boolean = (SELF.tokens.size == 1)
-    val isRefund: Boolean = (OUTPUTS.size == 2)
 
-    if (!isRefund) {
+    val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
+
+    if (_action == 1) {
 
         val validRevealTx: Boolean = {
 

@@ -19,7 +19,7 @@
     // Inputs: Reveal, Registry, Commit
     // Data Inputs: USDv2OracleDatapoint, ?ErgoDexErg2Token, ?Config
     // Outputs: ErgoNameIssuance, Registry, SubNameRegistry, ErgoNameFee, MinerFee, TxOperatorFee
-    // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
+    // Context Variables: Action, ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
     // $subNameContractBytesHash: Coll[Byte]
@@ -83,9 +83,7 @@
     val minCommitBoxAge: Int                = ageThreshold._1
     val maxCommitBoxAge: Int                = ageThreshold._2
 
-    val _action: Int                = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
-    val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](1).get
-    val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](2).get
+    val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
     val isDefaultPaymentMode: Boolean = (CONTEXT.dataInputs.size == 1)
 
@@ -107,6 +105,9 @@
             val txOperatorFeeBoxOut: Box    = OUTPUTS(5)
 
             // Relevant Variables
+            val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](1).get
+            val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](2).get
+            
             val ergoNameTokenId: Coll[Byte]             = revealBoxIn.id // Thus all ErgoName token ids will be unique.
 
             val commitAge: Int                          = (HEIGHT - commitBoxIn.creationInfo._1)
@@ -298,11 +299,15 @@
 
     } else {
 
-        val address1 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-        val address2 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-        //val address3 = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-        //val address4 = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-        atLeast(1, Coll(address1, address2))
+        val adoo = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        val lgd = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        val balb = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
+        val mgpai = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
+        val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
+        val minRequiredSignatures = 2
+        val ergonameMultiSigSigmaProp = atLeast(minRequiredSignatures, addresses)
+
+        ergonameMultiSigSigmaProp
 
     }
 

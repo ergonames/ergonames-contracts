@@ -32,7 +32,7 @@
     // $ergonameCollectionTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
-    // None
+    // _action: Int
 
     // ===== User Defined Functions ===== //
     // None
@@ -42,9 +42,10 @@
     val ergonameCollectionTokenAmount = SELF.tokens.fold(0L, { (sum: Long, t: (Coll[Byte], Long)) =>
         if (t._1 == $ergonameCollectionTokenId) sum + t._2 else sum
     })
-    val isRefund: Boolean = (OUTPUTS.size == 3)
 
-    if (!isRefund) {
+    val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
+
+    if (_action == 1) {
 
         val validRevealTx: Boolean = {
 
