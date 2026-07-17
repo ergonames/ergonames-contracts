@@ -199,7 +199,7 @@
 
                 val validErgoNameInsertion: Boolean = {
 
-                val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
+                    val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
                     allOf(Coll(
                         (registryBoxOut.R4[AvlTree].get == newRegistry),
@@ -248,7 +248,7 @@
                     (subNameRegistryBoxOut.tokens(0) == (ergoNameTokenId, 1L)), // We mint a token without following the asset standard, just used for identification purposes. This will have the same token id as the user's ErgoName.
                     (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
                     (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
-                    (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameTokenId)
+                    (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameBytes)
                 ))
 
             }

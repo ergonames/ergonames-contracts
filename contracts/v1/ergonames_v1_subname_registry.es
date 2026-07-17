@@ -11,13 +11,13 @@
     // Registers
     // R4: AvlTree              RegistryAvlTree
     // R5: (Coll[Byte], Long)   PreviousState
-    // R6: Coll[Byte]           ParentErgoNameTokenId
+    // R6: Coll[Byte]           ParentErgoNameBytes
 
     // ===== Relevant Transactions ===== //
     // 1. Mint SubName
     // Inputs: ErgoNameNFT, ParentSubNameRegistry
     // Data Inputs: None
-    // Outputs: SubNameNFT, ParentSubNameRegistry, ChildSubNameRegistry, ErgoNameNFT, MinerFee, TxOperatorFee
+    // Outputs: SubNameNFT, ParentSubNameRegistry, ChildSubNameRegistry, ErgoNameNFT
     // Context Variables: Action, SubNameHash, InerstionProof
     // 2. SubName Self-Burn
     // Inputs: ParentSubNameRegistry, SubNameNFT
@@ -34,33 +34,12 @@
     // None
 
     // ===== Context Variables (_) ===== //
-    // _action: Int     - Integer representing the transaction type.
+    // _action: Int                 - Integer representing the transaction type.
+    // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
+    // _insertionProof: Coll[Byte]  - Proof that the SubNameHash and SubNameTokenId were inserted into the registry avl tree.
 
     // ===== User Defined Functions ===== //
-    // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
     // def isValidAscii: (Coll[Byte] => Boolean)
-
-    def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
-
-        val prop: SigmaProp = propAndBox._1
-        val box: Box = propAndBox._2
-
-        val propBytes: Coll[Byte] = prop.propBytes
-        val treeBytes: Coll[Byte] = box.propositionBytes
-
-        if (treeBytes(0) == 0) {
-
-            (treeBytes == propBytes)
-
-        } else {
-
-            // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
-            val offset = if (treeBytes.size > 127) 3 else 2
-            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size))
-
-        }
-
-    }
 
     def isValidAscii(chars: Coll[Byte]): Boolean = {
         // Allowed ASCII characters (based on x.com handle format)
@@ -85,23 +64,15 @@
 
     // ===== Relevant Variables ===== //
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
+    val parentErgoNameTokenId: Coll[Byte]   = SELF.tokens(0)._1
+    val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
+    val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
+    val parentErgoNameBytes: Coll[Byte]     = SELF.R6[Coll[Byte]].get
 
     if (_action == 1) {
 
         // ===== Mint SubName Tx ===== //
         val validMintSubNameTx: Boolean = {
-
-            // ===== Context Variables ===== //
-            // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
-            // _insertionProof: Coll[Byte]  - Proof that the SubNameHash and SubNameTokenId were inserted into the registry avl tree.
-
-            // ===== Relevant Variables ===== //
-            val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
-            val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
-            val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
-
-            val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](1).get
-            val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](2).get
 
             // Inputs
             val ergoNameNftBoxIn: Box           = INPUTS(0)
@@ -112,16 +83,14 @@
             val parentSubNameRegistryBoxOut: Box            = OUTPUTS(1)
             val childSubNameRegistryBoxOut: Box             = OUTPUTS(2)
             val ergoNameNftBoxOut: Box                      = OUTPUTS(3)
-            val minerFeeBoxOut: Box                         = OUTPUTS(4)
-            val txOperatorFeeBoxOut: Box                    = OUTPUTS(5)
 
             // Relevant Variables
+            val _subNameHash: Coll[Byte]                = getVar[Coll[Byte]](1).get
+            val _insertionProof: Coll[Byte]             = getVar[Coll[Byte]](2).get
+            
             val subNameTokenId: Coll[Byte]              = ergoNameNftBoxIn.id // Thus all ErgoName token ids will be unique.
 
-            val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R4[Coll[Byte]].get
-
-            val receiverPKGroupElement: GroupElement    = childSubNameRegistryBoxOut.R5[GroupElement].get
-            val receiverPKSigmaProp: SigmaProp          = proveDlog(receiverPKGroupElement)
+            val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R6[Coll[Byte]].get
 
             val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0) == (parentErgoNameTokenId, 1L))
 
@@ -154,7 +123,10 @@
 
                     val newRegistry: AvlTree = previousRegistry.insert(Coll((_subNameHash, subNameTokenId)), _insertionProof).get
 
-                    (parentSubNameRegistryBoxOut.R4[AvlTree].get.digest == newRegistry.digest)
+                    allOf(Coll(
+                        (parentSubNameRegistryBoxOut.R4[AvlTree].get == newRegistry),
+                        (_subNameHash == blake2b256(subNameBytes))
+                    ))
 
                 }
 
@@ -181,27 +153,20 @@
 
                 val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
 
-                val validR5: Boolean = {
-                    val r5 = childSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get
-                    (r5._1.size == 0) && (r5._2 == 0L)
-                }
-
                 allOf(Coll(
                     (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                     (childSubNameRegistryBoxOut.tokens(0) == (subNameTokenId, 1L)),
                     (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                    validR5,
-                    (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameTokenId)
+                    (childSubNameRegistryBoxOut.R5[Coll[Byte], Long].get == (Coll[Byte](), 0L)),
+                    (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameBytes)
                 ))
 
             }
 
             val validSubNameNftBoxOut: Boolean = {
 
-                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, subNameNftBoxOut)
-
                 allOf(Coll(
-                    isSigmaPropEqualToBoxProp(propAndBox),
+                    (subNameNftBoxOut.propositionBytes == ergoNameFeeBoxIn.propositionBytes),
                     (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L))
                 ))
 
@@ -209,10 +174,8 @@
 
             val validErgoNameNftBoxOut: Boolean = {
 
-                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, ergoNameNftBoxOut)
-
                 allOf(Coll(
-                    isSigmaPropEqualToBoxProp(propAndBox),
+                    (ergoNameNftBoxOut.propositionBytes == ergoNameNftBoxIn.propositionBytes),
                     (ergoNameNftBoxOut.tokens(0) == ergoNameNftBoxIn.tokens(0))
                 ))
 
@@ -338,7 +301,7 @@
         val validSubNameParentBurnsChildTx: Boolean = {
 
             // ===== Context Variables ===== //
-            // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
+            // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to delete.
             // _containsProof: Coll[Byte]   - Proof for checking if SubName exists in the avl tree.
             // _removeProof: Coll[Byte]     - Proof SubName was deleted from the avl tree.
 

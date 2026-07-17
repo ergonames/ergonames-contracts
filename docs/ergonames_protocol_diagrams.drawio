@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.7.5 Chrome/114.0.5735.289 Electron/25.8.1 Safari/537.36">
   <diagram name="v1" id="_t__87RqGcl-udBQx4Er">
-    <mxGraphModel dx="-673" dy="-592" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+    <mxGraphModel dx="-160" dy="-349" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -170,6 +170,22 @@
             <Array as="points">
               <mxPoint x="1450" y="2420" />
               <mxPoint x="1450" y="2570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1HZDVK2_N1oQxJi811E6-4" edge="1" parent="1" source="yPIGUNzcu8B8vEv_X-cg-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;" target="1HZDVK2_N1oQxJi811E6-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1450" y="2420" />
+              <mxPoint x="1450" y="2620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1HZDVK2_N1oQxJi811E6-5" edge="1" parent="1" source="yPIGUNzcu8B8vEv_X-cg-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;" target="1HZDVK2_N1oQxJi811E6-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1450" y="2420" />
+              <mxPoint x="1450" y="2670" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -725,6 +741,12 @@
         </mxCell>
         <mxCell id="Luy-zMiTwNjZS3bAQ-xq-21" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;rounded=0;fontStyle=1;fontSize=7;fillColor=#b0e3e6;strokeColor=#0e8088;" value="Reveal Proxy" vertex="1">
           <mxGeometry height="40" width="40" x="2200" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="1HZDVK2_N1oQxJi811E6-2" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;rounded=0;fontStyle=1;fontSize=7;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="Miner &lt;br&gt;Fee" vertex="1">
+          <mxGeometry height="40" width="40" x="1470" y="2600" as="geometry" />
+        </mxCell>
+        <mxCell id="1HZDVK2_N1oQxJi811E6-3" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;rounded=0;fontStyle=1;fontSize=7;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Tx Operator&lt;br&gt;Fee" vertex="1">
+          <mxGeometry height="40" width="40" x="1470" y="2650" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
