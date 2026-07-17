@@ -28,15 +28,18 @@
     // ===== User Defined Functions ===== //
     // None
 
-    val adoo = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-    val lgd = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-    val balb = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-    val mgpai = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-    val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
-    val minRequiredSignatures = 2
-    val ergonameMultiSigSigmaProp = atLeast(minRequiredSignatures, addresses)
+    //val msig = PK("91JepDHYPLhuwyCqsmu528NTRbLN2xCNRiSqz7ZsZSrGJYvCFbV3XAmdjMrUzEG8Ah84cJzCVVMp4FCDXDfsxo1cbdu7zaadwKZhLpZwRpFJnwRhDwUefx9BgoavK98QYtjCP4oL734AGB8fUfhDiewSCQngoZREvRfvMNggauzmf4iw7WZwSUEdavwJzApfzZmVsRPC5492rWjT2Die3pQdUYruNr")
+    //val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai, msig)
+    val adoo = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
+    val lgd = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
+    val balb = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
+    val mgpai = PK("9g5yzitxX53B4RVi1DHLjrMx7iwTQn38kLG2XVVkhvHvcB1TcEz")
+    val msig_addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
+    val min_required_signatures: Int = 2
+    val ergoname_msig_sigmaprop: SigmaProp = atLeast(min_required_signatures, msig_addresses)
+    val addresses: Coll[SigmaProp] = msig_addresses ++ ergoname_msig_sigmaprop
 
-    val shares: Coll[Long] = Coll(250L, 250L, 250L, 250L)
+    val shares: Coll[Long] = Coll(500L, 200L, 100L, 50L, 150L)
     val recipientCount: Int = addresses.size
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
@@ -74,7 +77,7 @@
 
     } else {
 
-        ergonameMultiSigSigmaProp
+        ergoname_msig_sigmaprop
 
     }
 

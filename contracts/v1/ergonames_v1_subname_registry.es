@@ -413,15 +413,15 @@
 
     } else {
 
-        val adoo = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-        val lgd = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-        val balb = PK("3WvubspBMttcKU97e6oAKdjgaXmoVUDDi6aKdt3in9zTvzSUTxto")
-        val mgpai = PK("3WxJrwDLXgGE53KpdJ2nSjSMRdXaDWh7Fdz9MY2Zh37UAwfLXzBU")
-        val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
-        val minRequiredSignatures = 2
-        val ergonameMultiSigSigmaProp = atLeast(minRequiredSignatures, addresses)
+        val adoo = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
+        val lgd = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
+        val balb = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
+        val mgpai = PK("9g5yzitxX53B4RVi1DHLjrMx7iwTQn38kLG2XVVkhvHvcB1TcEz")
+        val msig_addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
+        val min_required_signatures: Int = 2
+        val ergoname_msig_sigmaprop: SigmaProp = atLeast(min_required_signatures, msig_addresses)
 
-        ergonameMultiSigSigmaProp
+        ergoname_msig_sigmaprop
 
     }
 
