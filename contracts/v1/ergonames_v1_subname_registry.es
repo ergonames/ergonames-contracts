@@ -376,7 +376,7 @@
 
                 val newRegistry: AvlTree = previousRegistry.remove(Coll(_subNameHash), _removeProof).get
 
-                (parentSubNameRegistryBoxOut.R4[AvlTree].get.digest == newRegistry.digest)
+                (parentSubNameRegistryBoxOut.R4[AvlTree].get == newRegistry)
 
             }
 

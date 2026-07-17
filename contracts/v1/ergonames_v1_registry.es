@@ -201,7 +201,7 @@
                 val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
                     allOf(Coll(
-                        (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
+                        (registryBoxOut.R4[AvlTree].get == newRegistry),
                         (_ergoNameHash == blake2b256(ergoNameBytes))
                     ))
 
