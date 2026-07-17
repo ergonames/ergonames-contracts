@@ -310,38 +310,41 @@
 
                 } else {
 
-                    val ergoDexErg2TokenPoolBoxIn: Box              = CONTEXT.dataInputs(1)
-                    val configBoxIn: Box                            = CONTEXT.dataInputs(2)
+                    // DISABLED FOR LAUNCH
+                    // val ergoDexErg2TokenPoolBoxIn: Box              = CONTEXT.dataInputs(1)
+                    // val configBoxIn: Box                            = CONTEXT.dataInputs(2)
 
-                    val paymentTokenId: Coll[Byte]                  = revealBoxIn.tokens(0)._1
-                    val configAvlTree: AvlTree                      = configBoxIn.R4[AvlTree].get
-                    val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](3).get
-                    val configElement: Coll[Byte]                   = configAvlTree.get(paymentTokenId, _lookupProof)
+                    // val paymentTokenId: Coll[Byte]                  = revealBoxIn.tokens(0)._1
+                    // val configAvlTree: AvlTree                      = configBoxIn.R4[AvlTree].get
+                    // val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](3).get
+                    // val configElement: Coll[Byte]                   = configAvlTree.get(paymentTokenId, _lookupProof)
 
-                    if (configElement.isEmpty) {
-                        false
-                    } else {
+                    // if (configElement.isEmpty) {
+                    //     false
+                    // } else {
 
-                        // No slippage tolerance here.
+                    //     // No slippage tolerance here.
 
-                        val ergoDexErg2TokenPoolId: Coll[Byte]      = configElement.get.slice(0, 32)
-                        val nanoErgVolume_2: BigInt                 = ergoDexErg2TokenPoolBoxIn.value
-                        val tokenVolume_2: BigInt                   = ergoDexErg2TokenPoolBoxIn.tokens(2)._2
-                        val equivalentPaymentTokenAmount: BigInt    = (tokenVolume_2 * equivalentNanoErg) / nanoErgVolume_2
+                    //     val ergoDexErg2TokenPoolId: Coll[Byte]      = configElement.get.slice(0, 32)
+                    //     val nanoErgVolume_2: BigInt                 = ergoDexErg2TokenPoolBoxIn.value
+                    //     val tokenVolume_2: BigInt                   = ergoDexErg2TokenPoolBoxIn.tokens(2)._2
+                    //     val equivalentPaymentTokenAmount: BigInt    = (tokenVolume_2 * equivalentNanoErg) / nanoErgVolume_2
 
-                        val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
-                        val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
-                        val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
+                    //     val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
+                    //     val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
+                    //     val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
 
-                        allOf(Coll(
-                            validUsdOracle,
-                            validConfigBoxIn,
-                            validErgoDexErg2TokenPool,
-                            validFeePayment,
-                            validFeeAddress
-                        ))
+                    //     allOf(Coll(
+                    //         validUsdOracle,
+                    //         validConfigBoxIn,
+                    //         validErgoDexErg2TokenPool,
+                    //         validFeePayment,
+                    //         validFeeAddress
+                    //     ))
 
-                    }
+                    // }
+
+                    false
 
                 }
 
