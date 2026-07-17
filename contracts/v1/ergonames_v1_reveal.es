@@ -113,17 +113,6 @@
 
             }
 
-            val validErgoNameMint: Boolean = {
-
-                val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, ergonameIssuanceBoxOut)
-
-                allOf(Coll(
-                    isSigmaPropEqualToBoxProp(propAndBox),
-                    (ergonameIssuanceBoxOut.tokens(0) == (SELF.id, 1L))
-                ))
-
-            }
-
             val validCollectionTokenBurn = {
 
                 OUTPUTS.forall { (output: Box) =>

@@ -22,6 +22,8 @@
     // Context Variables: Action, ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
+    // $ergoNameCollectionTokenId: Coll[Byte]
+    // $revealContractBytesHash: Coll[Byte]
     // $subNameContractBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
@@ -34,8 +36,31 @@
     // _lookupProof: Coll[Byte]     - Proof for getting a value from the config avl tree.
 
     // ===== User Defined Functions ===== //
+    // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
     // def calcUsdPriceInCents: (Coll[Byte] => BigInt)
     // def isValidAscii: (Coll[Byte] => Boolean)
+
+    def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
+
+        val prop: SigmaProp = propAndBox._1
+        val box: Box = propAndBox._2
+
+        val propBytes: Coll[Byte] = prop.propBytes
+        val treeBytes: Coll[Byte] = box.propositionBytes
+
+        if (treeBytes(0) == 0) {
+
+            (treeBytes == propBytes)
+
+        } else {
+
+            // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
+            val offset = if (treeBytes.size > 127) 3 else 2
+            (propBytes.slice(1, propBytes.size) == treeBytes.slice(offset, treeBytes.size))
+
+        }
+
+    }
 
     def calcUsdPrice(charsAndMap: (Coll[Byte], Coll[BigInt])): BigInt = {
 
@@ -128,6 +153,15 @@
 
             }
 
+            val validReveal: Boolean = {
+
+                allOf(Coll(
+                    blake2b256(revealBoxIn.propositionBytes) == $revealContractBytesHash,
+                    revealBoxIn.tokens(0) == ($ergoNameCollectionTokenId, 1L)
+                ))
+
+            }            
+
             val validCommit: Boolean = {
 
                 val calculatedHash: Coll[Byte] = blake2b256(
@@ -193,6 +227,17 @@
 
             }
 
+            val validErgoNameMint: Boolean = {
+
+                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, ergonameIssuanceBoxOut)
+
+                allOf(Coll(
+                    isSigmaPropEqualToBoxProp(propAndBox),
+                    (ergonameIssuanceBoxOut.tokens(0) == (SELF.id, 1L))
+                ))
+
+            }
+
             val validSubNameRegistryBoxOut: Boolean = {
 
                 val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
@@ -205,6 +250,23 @@
                     (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameTokenId)
                 ))
 
+            }
+
+            val validTokenLimit: Boolean = {
+
+                val outputs_sum: Long = OUTPUTS.fold(0L, 
+                { (sum: Long, output: Box) =>
+                    
+                    val output_sum: Long = output.tokens.fold(0L, 
+                    { (sum: Long, t: (Coll[Byte], Long)) =>
+                        if (t._1 == ergoNameTokenId) sum + t._2 else sum
+                    })
+
+                    sum + output_sum
+
+                })
+
+                (outputs_sum == 2L)
             }
 
             val validErgoNameFeeBoxOut: Boolean = {
@@ -287,9 +349,12 @@
 
             allOf(Coll(
                 validErgoNameFormat,
+                validReveal,
                 validCommit,
                 validRegistryUpdate,
+                validErgoNameMint,
                 validSubNameRegistryBoxOut,
+                validTokenLimit,
                 validErgoNameFeeBoxOut
             ))
 

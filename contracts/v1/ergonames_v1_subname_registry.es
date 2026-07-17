@@ -37,29 +37,8 @@
     // _action: Int     - Integer representing the transaction type.
 
     // ===== User Defined Functions ===== //
-    // def isValidAscii: (Coll[Byte] => Boolean)
     // def isSigmaPropEqualToBoxProp: ((SigmaProp, Box) => Boolean)
-
-    def isValidAscii(chars: Coll[Byte]): Boolean = {
-        // Allowed ASCII characters (based on x.com handle format)
-        val zero: Byte          = 48         // Numbers lower-bound
-        val nine: Byte          = 57         // Numbers upper-bound
-        val A: Byte             = 65         // Upper-case letters lower-bound
-        val Z: Byte             = 90         // Upper-case letters upper-bound
-        val a: Byte             = 97         // Lower-case letters lower-bound
-        val z: Byte             = 122        // Lower-case letters upper-bound
-        val underscore: Byte    = 95         // The only non-alphanumeric character allowed
-
-        // All characters must be a digit, an uppercase letter, a lowercase letter, an underscore, or any combination thereof.
-        chars.forall { (char: Byte) =>
-            val isDigit: Boolean            = char >= zero && char <= nine
-            val isUpperCaseLetter: Boolean  = char >= A && char <= Z
-            val isLowerCaseLetter: Boolean  = char >= a && char <= z
-            val isUnderscore: Boolean       = char == underscore
-
-            isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore
-        }
-    }
+    // def isValidAscii: (Coll[Byte] => Boolean)
 
     def isSigmaPropEqualToBoxProp(propAndBox: (SigmaProp, Box)): Boolean = {
 
@@ -81,6 +60,27 @@
 
         }
 
+    }
+
+    def isValidAscii(chars: Coll[Byte]): Boolean = {
+        // Allowed ASCII characters (based on x.com handle format)
+        val zero: Byte          = 48         // Numbers lower-bound
+        val nine: Byte          = 57         // Numbers upper-bound
+        val A: Byte             = 65         // Upper-case letters lower-bound
+        val Z: Byte             = 90         // Upper-case letters upper-bound
+        val a: Byte             = 97         // Lower-case letters lower-bound
+        val z: Byte             = 122        // Lower-case letters upper-bound
+        val underscore: Byte    = 95         // The only non-alphanumeric character allowed
+
+        // All characters must be a digit, an uppercase letter, a lowercase letter, an underscore, or any combination thereof.
+        chars.forall { (char: Byte) =>
+            val isDigit: Boolean            = char >= zero && char <= nine
+            val isUpperCaseLetter: Boolean  = char >= A && char <= Z
+            val isLowerCaseLetter: Boolean  = char >= a && char <= z
+            val isUnderscore: Boolean       = char == underscore
+
+            isDigit || isUpperCaseLetter || isLowerCaseLetter || isUnderscore
+        }
     }
 
     // ===== Relevant Variables ===== //
@@ -218,13 +218,31 @@
 
             }
 
+            val validTokenLimit: Boolean = {
+
+                val outputs_sum: Long = OUTPUTS.fold(0L, 
+                { (sum: Long, output: Box) =>
+                    
+                    val output_sum: Long = output.tokens.fold(0L, 
+                    { (sum: Long, t: (Coll[Byte], Long)) =>
+                        if (t._1 == subNameTokenId) sum + t._2 else sum
+                    })
+
+                    sum + output_sum
+
+                })
+
+                (outputs_sum == 2L)
+            }
+
             allOf(Coll(
                 validParentErgoName,
                 validSubNameFormat,
                 validSubNameRegistryUpdate,
                 validChildSubNameRegistryBoxOut,
                 validSubNameNftBoxOut,
-                validErgoNameNftBoxOut
+                validErgoNameNftBoxOut,
+                validTokenLimit
             ))
 
         }
