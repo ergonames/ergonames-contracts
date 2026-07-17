@@ -1,2 +1,10 @@
 project/
 target/
+
+# Local-only contract security findings — MUST NOT be pushed to this PUBLIC repo
+# (it maps unpatched live-beta vulnerabilities). Share privately with reviewers.
+SECURITY_FINDINGS_GENESIS.md
+
+# private genesis handoff (never push to the public repo)
+GENESIS_REVIEW_FOR_LUCA.md
+*.patch

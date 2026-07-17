@@ -22,6 +22,7 @@
     // Context Variables: ErgoNameHash, InsertionProof, LookUpProof
 
     // ===== Compile Time Constants ($) ===== //
+    // $revealContractBytesHash: Coll[Byte]
     // $subNameContractBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
@@ -83,9 +84,13 @@
     val minCommitBoxAge: Int                = ageThreshold._1
     val maxCommitBoxAge: Int                = ageThreshold._2
 
-    val address1 = PK("9h2g3WsPy5Ty2Ekq4w9tKMVrco4d5iu9dAxYLoTFoDggwSCW5yk")
-    val address2 = PK("9fXDsjy38dyu1bzRbe6tp6Ltw4m2u6je98ujv82pbGw78uExcd9")
-    val $ergonameMultiSigSigmaProp = atLeast(1, Coll(address1, address2))
+    // Genesis 2-of-4 governance multisig (Minotaur, validated 2026-06-29).
+    // Replaces the operator-derived 1-of-2 placeholder (H3 key replacement).
+    val govA = PK("9g5yzitxX53B4RVi1DHLjrMx7iwTQn38kLG2XVVkhvHvcB1TcEz")
+    val govB = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
+    val govC = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
+    val govD = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
+    val $ergonameMultiSigSigmaProp = atLeast(2, Coll(govA, govB, govC, govD))
 
     // The mint validation dereferences inputs, outputs, and context variables
     // that only exist in a well-formed mint tx; evaluating it in any other tx
@@ -98,6 +103,20 @@
         (CONTEXT.dataInputs.size >= 1),
         getVar[Coll[Byte]](0).isDefined,
         getVar[Coll[Byte]](1).isDefined
+    ))
+
+    // Burn ErgoName gate. `allOf` does NOT short-circuit, so reading getVar(3).get
+    // unconditionally would throw on non-burn spends and brick the escape hatch
+    // (an H4-class trap); extract the action defensively. Only a deliberately
+    // burn-shaped tx (not mint-shaped, burn action byte == 1, the 3 proofs set)
+    // enters the burn branch below.
+    val burnAction: Int = if (getVar[Byte](3).isDefined) getVar[Byte](3).get.toInt else -1
+    val burnRequested: Boolean = allOf(Coll(
+        !isMintShaped,
+        (burnAction == 1),
+        getVar[Coll[Byte]](0).isDefined,   // ErgoNameHash
+        getVar[Coll[Byte]](1).isDefined,   // LookUpProof
+        getVar[Coll[Byte]](2).isDefined    // RemoveProof
     ))
 
     if (isMintShaped) {
@@ -181,7 +200,13 @@
                val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
                 allOf(Coll(
-                    (registryBoxOut.R4[AvlTree].get.digest == newRegistry.digest),
+                    // H2: pin the FULL tree config (digest + insert flag + keyLength),
+                    // not just the digest — else a mint-tx builder can recreate R4 with
+                    // the same digest but insert DISABLED, permanently bricking every
+                    // future mint (previousRegistry.insert returns None → .get throws).
+                    // AvlTree `==` compares all fields; newRegistry carries previous-
+                    // Registry's flags/keyLength, so this also keeps insert enabled.
+                    (registryBoxOut.R4[AvlTree].get == newRegistry),
                     (_ergoNameHash == blake2b256(ergoNameBytes))
                 ))
 
@@ -264,43 +289,38 @@
 
             } else {
 
-                val ergoDexErg2TokenPoolBoxIn: Box              = CONTEXT.dataInputs(1)
-                val configBoxIn: Box                            = CONTEXT.dataInputs(2)
-
-                val paymentTokenId: Coll[Byte]                  = revealBoxIn.tokens(0)._1
-                val configAvlTree: AvlTree                      = configBoxIn.R4[AvlTree].get
-                val _lookupProof: Coll[Byte]                    = getVar[Coll[Byte]](2).get
-                val configElement: Coll[Byte]                   = configAvlTree.get(paymentTokenId, _lookupProof)
-
-                if (configElement.isEmpty) {
-                    false
-                } else {
-
-                    val ergoDexErg2TokenPoolId: Coll[Byte]      = configElement.get.slice(0, 32)
-                    val nanoErgVolume_2: BigInt                 = ergoDexErg2TokenPoolBoxIn.value
-                    val tokenVolume_2: BigInt                   = ergoDexErg2TokenPoolBoxIn.tokens(2)._2
-                    val equivalentPaymentTokenAmount: BigInt    = (tokenVolume_2 * equivalentNanoErg) / nanoErgVolume_2
-
-                    val validConfigBoxIn: Boolean               = (configBoxIn.tokens(0)._1 == $configSingletonTokenId)
-                    val validErgoDexErg2TokenPool: Boolean      = (ergoDexErg2TokenPoolBoxIn.tokens(0)._1 == ergoDexErg2TokenPoolId)
-                    val validFeePayment: Boolean                = ((ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId) && (ergoNameFeeBoxOut.tokens(0)._2.toBigInt >= equivalentPaymentTokenAmount))
-                    val validFeeAddress: Boolean                = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
-
-                    allOf(Coll(
-                        validSigUsdOracle,
-                        validConfigBoxIn,
-                        validErgoDexErg2TokenPool,
-                        validFeePayment,
-                        validFeeAddress
-                    ))
-
-                }
+                // M2: token payments are DISABLED at genesis. The token path derived
+                // the price from instantaneous ErgoDex pool reserves with NO slippage
+                // bound or oracle anchoring (the ERG path enforces ±5% via isWithin),
+                // so a pool imbalance could over/underprice a name. Any non-default
+                // payment mode is rejected here; the token-payment path must be
+                // rebuilt (SigUSD-oracle-anchored + a slippage window) and re-audited
+                // before re-enabling. The genesis config tree also stays empty.
+                false
 
             }
 
         }
 
+        // M1: authenticate INPUTS(0) as the real reveal contract. Without this an
+        // attacker can pass their own P2PK box with a crafted R9 as INPUTS(0),
+        // bypassing reveal.es (no collection token burned) yet still inserting a
+        // name into the authoritative AVL tree. reveal.es itself authenticates the
+        // commit box, so this single binding secures the whole mint input chain.
+        //
+        // REVIEW NOTE (Luca — pick one): this hash check couples registry
+        // compilation to the reveal contract (registry must be compiled AFTER
+        // reveal, and $revealContractBytesHash injected). A self-contained
+        // alternative with no compile-order coupling is:
+        //     revealBoxIn.tokens(0) == ($ergoNameCollectionTokenId, 1L)
+        // The collection token is minted once at genesis and can only ever sit in
+        // the collection box or a reveal box — collection.es only ever sends it to
+        // a reveal box, and reveal.es burns it at mint / returns it at refund — so
+        // it can never reach an attacker's P2PK box. Sound but more indirect.
+        val validRevealBoxAuth: Boolean = (blake2b256(revealBoxIn.propositionBytes) == $revealContractBytesHash)
+
         allOf(Coll(
+            validRevealBoxAuth,
             validErgoNameFormat,
             validCommit,
             validRegistryUpdate,
@@ -310,7 +330,76 @@
 
     }
 
-    sigmaProp(validMintErgoNameTx) || $ergonameMultiSigSigmaProp
+    // H3: the multisig escape hatch lives ONLY in the non-mint `else` branch
+    // below. A mint-shaped tx must satisfy validMint — the multisig can no
+    // longer override mint validation to seize the user's boxes.
+    sigmaProp(validMintErgoNameTx)
+
+    } else if (burnRequested) {
+
+        // ===== Burn ErgoName Tx (the owner permanently deletes their name) =====
+        // Owner-authorised implicitly: spending INPUTS(1) (the ErgoName NFT box)
+        // requires the owner's signature — so providing it IS the authorisation.
+        // Mirrors the subname self-burn. The name becomes re-registrable.
+        val validBurnErgoNameTx: Boolean = {
+
+            val _burnErgoNameHash: Coll[Byte] = getVar[Coll[Byte]](0).get
+            val _burnLookupProof: Coll[Byte]  = getVar[Coll[Byte]](1).get
+            val _burnRemoveProof: Coll[Byte]  = getVar[Coll[Byte]](2).get
+
+            val ergoNameNftBoxIn: Box   = INPUTS(1)
+            val burnRegistryBoxOut: Box = OUTPUTS(0)
+            val burnedTokenId: Coll[Byte] = ergoNameNftBoxIn.tokens(0)._1
+
+            // Bind the removed name to the owned token: the registry must map this
+            // name to exactly the token being burned (can't remove name B while
+            // burning token A, nor remove a name you don't hold).
+            val validErgoName: Boolean = {
+                val tokenId: Option[Coll[Byte]] = previousRegistry.get(_burnErgoNameHash, _burnLookupProof)
+                if (tokenId.isDefined) { (tokenId.get == burnedTokenId) } else { false }
+            }
+
+            // Remove the name from the AVL tree. REQUIRES the genesis tree created
+            // with removeAllowed = true (see H2). Full-config `==` (not just
+            // .digest) pins the flags so the recreated tree keeps insert + remove
+            // enabled — same H2 hardening as the mint path.
+            val validRemoval: Boolean = {
+                val newRegistry: AvlTree = previousRegistry.remove(Coll(_burnErgoNameHash), _burnRemoveProof).get
+                (burnRegistryBoxOut.R4[AvlTree].get == newRegistry)
+            }
+
+            // The ErgoName token is destroyed: it appears in NO output.
+            val validBurn: Boolean = {
+                OUTPUTS.forall { (o: Box) =>
+                    o.tokens.forall { (t: (Coll[Byte], Long)) => (t._1 != burnedTokenId) }
+                }
+            }
+
+            // Registry recreated unchanged except its (now-smaller) tree — the
+            // cumulative state counter, age threshold and price map are preserved.
+            val validSelfRecreation: Boolean = {
+                allOf(Coll(
+                    (burnRegistryBoxOut.value == SELF.value),
+                    (burnRegistryBoxOut.propositionBytes == SELF.propositionBytes),
+                    (burnRegistryBoxOut.tokens(0) == SELF.tokens(0)),
+                    (burnRegistryBoxOut.R5[(Coll[Byte], Long)].get == previousState),
+                    (burnRegistryBoxOut.R6[(Int, Int)].get == ageThreshold),
+                    (burnRegistryBoxOut.R7[Coll[BigInt]].get == priceMap)
+                ))
+            }
+
+            allOf(Coll(
+                validErgoName,
+                validRemoval,
+                validBurn,
+                validSelfRecreation
+            ))
+
+        }
+
+        // H3-correct: NO || multisig. A malformed burn simply fails; migrations
+        // set no burn vars and fall through to the multisig `else` below.
+        sigmaProp(validBurnErgoNameTx)
 
     } else {
 

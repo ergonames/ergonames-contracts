@@ -1,0 +1,9 @@
+{
+  "name": "ergonames-registry-burn-draft",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node burn_satisfiability_test.mjs" },
+  "dependencies": {
+    "@fleet-sdk/compiler": "0.12.0"
+  }
+}
