@@ -28,6 +28,7 @@
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $usdV2OracleSingletonTokenId: Coll[Byte]
+    // $dexyUsdTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int                 - Integer representing the transaction type.
@@ -274,7 +275,7 @@
                 val usdV2OracleDatapoint: Box                   = CONTEXT.dataInputs(0)
                 val nanoErgPerUsd: Long                         = usdV2OracleDatapoint.R4[Long].get / 100L // Price is now in cents.
                 val charsAndMap: (Coll[Byte], Coll[BigInt])     = (ergoNameBytes, priceMap)
-                val price: BigInt                               = calcUsdPrice(charsAndMap)
+                val price: BigInt                               = calcUsdPrice(charsAndMap) // USD Price in cents.
                 val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price)
                 
                 val validUsdOracle: Boolean                     = (usdV2OracleDatapoint.tokens(0)._1 == $usdV2OracleSingletonTokenId)
@@ -310,7 +311,9 @@
 
                 } else {
 
-                    // DISABLED FOR LAUNCH
+                    // Custom payment token id disabled for launch, where price is determined from ErgoDex LP.
+                    // However, support for USD stablecoins will be allowed.
+
                     // val ergoDexErg2TokenPoolBoxIn: Box              = CONTEXT.dataInputs(1)
                     // val configBoxIn: Box                            = CONTEXT.dataInputs(2)
 
@@ -343,8 +346,30 @@
                     //     ))
 
                     // }
+                    
+                    val paymentTokenId: Coll[Byte]  = revealBoxIn.tokens(0)._1 
+                    val dexyAmount: Long            = revealBoxInt.tokens(0)._2
 
-                    false
+                    val validPaymentTokenId: Boolean = (paymentTokenId == $dexyUsdTokenId)
+
+                    val validAmount: Boolean = {
+                        val usd_price = (price * 100.toBigInt)
+                        val dexy_price = usd_price / 1000000.toBigInt
+                        (dexyAmount.toBigInt == dexy_price)
+                    }
+
+                    val validFeePayment: Boolean = {
+                        allOf(Coll(
+                            ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId,
+                            ergoNameFeeBoxOut.tokens(0)._2 == dexyAmount
+                        ))
+                    }
+
+                    allOf(Coll(
+                        validPaymentTokenId
+                        validAmount,
+                        validFeePayment
+                    ))
 
                 }
 
