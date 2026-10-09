@@ -160,7 +160,6 @@
             }
 
             allOf(Coll(
-                validRevealBoxInValue,
                 validCommitBoxIn,
                 validSubNameRegistryAmount,
                 validErgonameIssuanceAmount,

@@ -18,7 +18,7 @@
     // Inputs: ErgoNameNFT, ParentSubNameRegistry
     // Data Inputs: None
     // Outputs: SubNameNFT, ParentSubNameRegistry, ChildSubNameRegistry, ErgoNameNFT
-    // Context Variables: Action, SubNameHash, InerstionProof
+    // Context Variables: Action, SubNameHash, InsertionProof
     // 2. SubName Self-Burn
     // Inputs: ParentSubNameRegistry, SubNameNFT
     // Data Inputs: None
@@ -76,7 +76,6 @@
 
             // Inputs
             val ergoNameNftBoxIn: Box           = INPUTS(0)
-            val parentSubNameRegistryBoxIn: Box = INPUTS(1) // i.e. SELF
 
             // Outputs
             val subNameNftBoxOut: Box                       = OUTPUTS(0)
@@ -92,7 +91,14 @@
 
             val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R6[Coll[Byte]].get
 
-            val validParentErgoName: Boolean = (ergoNameNftBoxIn.tokens(0) == (parentErgoNameTokenId, 1L))
+            val onlyOne: Boolean = (INPUTS(1).id == SELF.id)
+
+            val validParentErgoName: Boolean = {
+                allOf(Coll(
+                    (ergoNameNftBoxIn.tokens(0) == (parentErgoNameTokenId, 1L)),
+                    (ergoNameNftBoxIn.id != SELF.id)
+                ))
+            }
 
             val validSubNameFormat: Boolean = {
 
@@ -136,7 +142,7 @@
                         (parentSubNameRegistryBoxOut.value == SELF.value),
                         (parentSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                         (parentSubNameRegistryBoxOut.tokens(0) == SELF.tokens(0)),
-                        (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get)
+                        (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == parentErgoNameBytes)
                     ))
 
                 }
@@ -157,7 +163,7 @@
                     (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                     (childSubNameRegistryBoxOut.tokens(0) == (subNameTokenId, 1L)),
                     (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                    (childSubNameRegistryBoxOut.R5[Coll[Byte], Long].get == (Coll[Byte](), 0L)),
+                    (childSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
                     (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameBytes)
                 ))
 
@@ -166,7 +172,7 @@
             val validSubNameNftBoxOut: Boolean = {
 
                 allOf(Coll(
-                    (subNameNftBoxOut.propositionBytes == ergoNameFeeBoxIn.propositionBytes),
+                    (subNameNftBoxOut.propositionBytes == ergoNameNftBoxIn.propositionBytes),
                     (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L))
                 ))
 
@@ -176,7 +182,7 @@
 
                 allOf(Coll(
                     (ergoNameNftBoxOut.propositionBytes == ergoNameNftBoxIn.propositionBytes),
-                    (ergoNameNftBoxOut.tokens(0) == ergoNameNftBoxIn.tokens(0))
+                    (ergoNameNftBoxOut.tokens == ergoNameNftBoxIn.tokens)
                 ))
 
             }
@@ -199,6 +205,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validParentErgoName,
                 validSubNameFormat,
                 validSubNameRegistryUpdate,
@@ -218,14 +225,9 @@
         val validSubNameSelfBurnTx: Boolean = {
 
             // ===== Context Variables ===== //
-            // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
+            // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to burn.
             // _lookupProof: Coll[Byte]     - Proof for retrieveing SubName from the avl tree.
             // _removeProof: Coll[Byte]     - Proof SubName was deleted from the avl tree.
-
-            // ===== Relevant Variables ===== //
-            val previousRegistry: AvlTree           = SELF.R4[AvlTree].get
-            val previousState: (Coll[Byte], Long)   = SELF.R5[(Coll[Byte], Long)].get
-            val parentErgoNameTokenId: Coll[Byte]   = SELF.R6[Coll[Byte]].get
 
             val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](1).get
             val _lookupProof: Coll[Byte]    = getVar[Coll[Byte]](2).get
@@ -239,6 +241,8 @@
 
             // Relevant Variables
             val subNameTokenId: Coll[Byte] = userPkBoxIn.tokens(0)._1
+
+            val onlyOne: Boolean = (INPUTS(0).id == SELF.id)
 
             val validSubName: Boolean = {
 
@@ -258,7 +262,7 @@
 
                 val newRegistry: AvlTree = previousRegistry.remove(Coll(_subNameHash), _removeProof).get
 
-                (parentSubNameRegistryBoxOut.R4[AvlTree].get.digest == newRegistry.digest)
+                (parentSubNameRegistryBoxOut.R4[AvlTree].get == newRegistry)
 
             }
 
@@ -268,8 +272,8 @@
                     (parentSubNameRegistryBoxOut.value == SELF.value),
                     (parentSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                     (parentSubNameRegistryBoxOut.tokens(0) == SELF.tokens(0)),
-                    (parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == SELF.R5[(Coll[Byte], Long)].get),
-                    (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get)
+                    (parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == previousState),
+                    (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == parentErgoNameBytes)
                 ))
 
             }
@@ -285,6 +289,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validSubName,
                 validSubNameRemoval,
                 validSelfRecreation,
@@ -305,12 +310,6 @@
             // _containsProof: Coll[Byte]   - Proof for checking if SubName exists in the avl tree.
             // _removeProof: Coll[Byte]     - Proof SubName was deleted from the avl tree.
 
-            // ===== Relevant Variables ===== //
-            val previousRegistry: AvlTree                   = SELF.R4[AvlTree].get
-            val previousState: (Coll[Byte], Long)           = SELF.R5[(Coll[Byte], Long)].get
-            val parentErgoNameTokenId: Coll[Byte]           = SELF.R6[Coll[Byte]].get
-            val parentRegistrySingletonTokenId: Coll[Byte]  = SELF.tokens(0)._1
-
             val _subNameHash: Coll[Byte]    = getVar[Coll[Byte]](1).get
             val _containsProof: Coll[Byte]  = getVar[Coll[Byte]](2).get
             val _removeProof: Coll[Byte]    = getVar[Coll[Byte]](3).get
@@ -325,7 +324,9 @@
             // Relevant Variables
             val parentSubNameTokenId: Coll[Byte] = userPkBoxIn.tokens(0)._1
 
-            val validParentSubName: Boolean = (parentSubNameTokenId == parentRegistrySingletonTokenId)
+            val validParentSubName: Boolean = (parentSubNameTokenId == parentErgoNameTokenId)
+
+            val onlyOne: Boolean = (INPUTS(0).id == SELF.id)
 
             val validSubName: Boolean = {
 
@@ -349,8 +350,8 @@
                     (parentSubNameRegistryBoxOut.value == SELF.value),
                     (parentSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                     (parentSubNameRegistryBoxOut.tokens(0) == SELF.tokens(0)),
-                    (parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == SELF.R5[(Coll[Byte], Long)].get),
-                    (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get)
+                    (parentSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == previousState),
+                    (parentSubNameRegistryBoxOut.R6[Coll[Byte]].get == parentErgoNameBytes)
                 ))
             }
 
@@ -358,11 +359,12 @@
 
                 allOf(Coll(
                     (userPkBoxOut.propositionBytes == userPkBoxIn.propositionBytes),
-                    (userPkBoxOut.tokens(0) == userPkBoxIn.tokens(0))
+                    (userPkBoxOut.tokens == userPkBoxIn.tokens)
                 ))
             }
 
             allOf(Coll(
+                onlyOne,
                 validParentSubName,
                 validSubName,
                 validSubNameRemoval,

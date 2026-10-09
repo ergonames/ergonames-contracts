@@ -28,7 +28,6 @@
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $usdV2OracleSingletonTokenId: Coll[Byte]
-    // $dexyUsdTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int                 - Integer representing the transaction type.
@@ -286,14 +285,13 @@
                     val validFeePayment: Boolean = {
 
                         val minBoxValue: Long   = subNameRegistryBoxOut.value
-                        val amount: BigInt      = revealBoxIn.value.toBigInt - minerFeeBoxOut.value - subNameRegistryBoxOut.value - minBoxValue // Reveal box contains minerFee + subNameRegistry + minBox + payment
-                        val target: BigInt      = (amount * 100.toBigInt) / 105.toBigInt // 5% slippage
-                        val slippage: BigInt    = (amount - target)
-                        val difference: BigInt  = (equivalentNanoErg - target)
-                        val isWithin: Boolean   = (difference >= 0 && difference < slippage) || (difference <= 0 && difference > -1.toBigInt * slippage)
+                        val maxPrice: BigInt    = revealBoxIn.value.toBigInt - minerFeeBoxOut.value - subNameRegistryBoxOut.value - minBoxValue // Reveal box contains minerFee + subNameRegistry + minBox + maxPayment
+                        val quotePrice: BigInt  = (maxPrice * 100.toBigInt) / 105.toBigInt 
+                        val minPrice: BigInt    = (quotePrice * 95.toBigInt) / 100.toBigInt
+                        val isWithin: Boolean   = (equivalentNanoErg >= minPrice) && (equivalentNanoErg <= maxPrice)
                         
                         val validFee: Boolean     = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
-                        val validChange: Boolean  = (ergoNameIssuanceBoxOut.value.toBigInt >= (amount - equivalentNanoErg)) // Ensures that the user gets money back. 
+                        val validChange: Boolean  = (ergoNameIssuanceBoxOut.value.toBigInt >= (maxPrice + minBoxValue.toBigInt - equivalentNanoErg)) // Ensures that the user gets money back, or if equivalentNanoErg is the max price then the issuance box is the min box value. 
 
                         allOf(Coll(
                             isWithin,
@@ -347,30 +345,30 @@
 
                     // }
                     
-                    val paymentTokenId: Coll[Byte]  = revealBoxIn.tokens(0)._1 
-                    val dexyAmount: Long            = revealBoxInt.tokens(0)._2
+                    // val paymentTokenId: Coll[Byte]  = revealBoxIn.tokens(0)._1 
+                    // val dexyAmount: Long            = revealBoxInt.tokens(0)._2
 
-                    val validPaymentTokenId: Boolean = (paymentTokenId == $dexyUsdTokenId)
+                    // val validPaymentTokenId: Boolean = (paymentTokenId == $dexyUsdTokenId)
 
-                    val validAmount: Boolean = {
-                        val usd_price = (price * 100.toBigInt)
-                        val dexy_price = usd_price / 1000000.toBigInt
-                        (dexyAmount.toBigInt == dexy_price)
-                    }
+                    // val validAmount: Boolean = {
+                    //     val usd_price = (price * 100.toBigInt)
+                    //     val dexy_price = usd_price / 1000000.toBigInt
+                    //     (dexyAmount.toBigInt == dexy_price)
+                    // }
 
-                    val validFeePayment: Boolean = {
-                        allOf(Coll(
-                            ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId,
-                            ergoNameFeeBoxOut.tokens(0)._2 == dexyAmount
-                        ))
-                    }
+                    // val validFeePayment: Boolean = {
+                    //     allOf(Coll(
+                    //         ergoNameFeeBoxOut.tokens(0)._1 == paymentTokenId,
+                    //         ergoNameFeeBoxOut.tokens(0)._2 == dexyAmount
+                    //     ))
+                    // }
 
-                    allOf(Coll(
-                        validPaymentTokenId
-                        validAmount,
-                        validFeePayment
-                    ))
-
+                    // allOf(Coll(
+                    //     validPaymentTokenId
+                    //     validAmount,
+                    //     validFeePayment
+                    // ))
+                    false
                 }
 
             }
