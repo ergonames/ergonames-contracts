@@ -9,8 +9,8 @@
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
     // ===== Box Contents ===== //
-    // Tokens: None expected (ERG fees only in default payment mode)
-    // Registers: None
+    // Tokens: None expected (ERG fees only in default payment mode).
+    // Registers: None.
 
     // ===== Relevant Transactions ===== //
     // 1. Distribute Fees
@@ -20,7 +20,7 @@
     // Context Variables: 
 
     // ===== Compile Time Constants ($) ===== //
-    // None
+    // None.
 
     // ===== Context Variables (_) ===== //
     // _action: Int
@@ -28,8 +28,6 @@
     // ===== User Defined Functions ===== //
     // None
 
-    //val msig = PK("91JepDHYPLhuwyCqsmu528NTRbLN2xCNRiSqz7ZsZSrGJYvCFbV3XAmdjMrUzEG8Ah84cJzCVVMp4FCDXDfsxo1cbdu7zaadwKZhLpZwRpFJnwRhDwUefx9BgoavK98QYtjCP4oL734AGB8fUfhDiewSCQngoZREvRfvMNggauzmf4iw7WZwSUEdavwJzApfzZmVsRPC5492rWjT2Die3pQdUYruNr")
-    //val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai, msig)
     val adoo = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
     val lgd = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
     val balb = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
@@ -37,10 +35,11 @@
     val msig_addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
     val min_required_signatures: Int = 2
     val ergoname_msig_sigmaprop: SigmaProp = atLeast(min_required_signatures, msig_addresses)
-    val addresses: Coll[SigmaProp] = msig_addresses ++ ergoname_msig_sigmaprop
+    val addresses: Coll[SigmaProp] = msig_addresses.append(Coll(ergoname_msig_sigmaprop))
 
     val shares: Coll[Long] = Coll(500L, 200L, 100L, 50L, 150L)
     val recipientCount: Int = addresses.size
+    val miner_fee: Long = 10000000 // The msig update path could change this value, for example, if Ergo blockchain parameters change.
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -67,9 +66,14 @@
             }
 
             val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-            val validMinerFee: Boolean = (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
+            val validMinerFee: Boolean = {
+                allOf(Coll(
+                    (minerFeeBoxOut.value == miner_fee),
+                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
+                ))
+            }
 
-            validRecipients && validMinerFee
+            (validRecipients && validMinerFee)
 
         }
 
@@ -77,7 +81,7 @@
 
     } else {
 
-        ergoname_msig_sigmaprop
+        ergoname_msig_sigmaprop // Update the miner fee, for example.
 
     }
 

@@ -76,16 +76,18 @@
 
             // Inputs
             val registryBoxIn: Box = INPUTS(1)
+            
+            val onlyOne: Boolean = (INPUTS(2).id == SELF.id)
 
-
-            val validSingletonTokenId: Boolean = {
+            val validRegistry: Boolean = {
 
                 (registryBoxIn.tokens(0)._1 == $registrySingletonTokenId)
 
             }
 
             allOf(Coll(
-                validSingletonTokenId
+                onlyOne,
+                validRegistry
             ))
 
         }

@@ -30,6 +30,7 @@
     // $revealProxyErgoTreeBytesHash: Coll[Byte]
     // $ergonameCollectionSingletonTokenId: Coll[Byte]
     // $ergonameCollectionTokenId: Coll[Byte]
+    // $ergoNameFeeContractBytesHash: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int
@@ -89,10 +90,56 @@
 
             val validReveal: Boolean = {
 
+                val validEIP24Registers: Boolean = {
+
+                    // Ensure royalty must be programmatically enforced.
+                    val validRoyalty: Boolean = {
+                        if (revealBoxOut.R5[Coll[(Coll[Byte], Int)]].get.size == 1) {
+                            val royalties = revealBoxOut.R5[Coll[(Coll[Byte], Int)]].get
+                            val royalty = royalties(0)
+                            allOf(Coll(
+                                (blake2b256(royalty._1) == $ergoNameFeeContractBytesHash),
+                                (royalty._2 == 25)
+                            ))
+                        } else {
+                            false
+                        }
+                    }
+                    
+                    allOf(Coll(
+                        (revealBoxOut.R4[Int].get == 2),
+                        validRoyalty,
+                        (revealBoxOut.R6[(Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))].get == (Coll[(Coll[Byte], Coll[Byte])](), (Coll[(Coll[Byte], (Int, Int))](), Coll[(Coll[Byte], (Int, Int))]()))),
+                        (revealBoxOut.R7[Coll[Byte]].get == $ergonameCollectionTokenId),
+                        (revealBoxOut.R8[Coll[(Coll[Byte], Coll[Byte])]].get == Coll[(Coll[Byte], Coll[Byte])]())
+                    ))
+
+                }
+
+                val validR9Data: Boolean = {
+                    if (revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].isDefined) {
+                        
+                        val data = revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
+                        val fees = data._2._2
+                        if (fees.size == 3) {
+                            allOf(Coll(
+                                fees(0) >= 10000000L, // MinerFee
+                                fees(1) >= 20000000L, // TxOperatorFee
+                                fess(2) >= 10000000L  // MinBoxValue
+                            ))
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                }
+
                 allOf(Coll(
                     (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
                     (revealBoxOut.tokens(0) == ($ergonameCollectionTokenId, 1L)),
-                    (revealBoxOut.R7[Coll[Byte]].get == $ergonameCollectionTokenId), // For artwork standard v2 (EIP-24).
+                    validEIP24Registers,
+                    validR9Data
                 ))
 
             }

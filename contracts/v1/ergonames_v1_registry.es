@@ -139,10 +139,12 @@
             val commitHash: Coll[Byte]                  = commitBoxIn.R4[Coll[Byte]].get
 
             val revealData: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))      = revealBoxIn.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
-            val ergoNameBytes: Coll[Byte]                                       = revealData._2._1(0)
             val receiverPKGroupElement: GroupElement                            = revealData._1
             val receiverPKSigmaProp: SigmaProp                                  = proveDlog(receiverPKGroupElement)
+            val ergoNameBytes: Coll[Byte]                                       = revealData._2._1(0)            
             val commitSecret: Coll[Byte]                                        = revealData._2._1(1)
+            val commitBoxId: Coll[Byte]                                         = revealData._2._1(2)
+            val issuanceBoxHash: Coll[Byte]                                       = revealData._2._1(3)
 
             val validErgoNameFormat: Boolean = {
 
@@ -198,12 +200,10 @@
 
                 val validErgoNameInsertion: Boolean = {
 
-                    val newRegistry: AvlTree = previousRegistry.insert(Coll((_ergoNameHash, ergoNameTokenId)), _insertionProof).get
+                    val ergoNameHash = blake2b256(ergoNameBytes)
+                    val newRegistry: AvlTree = previousRegistry.insert(Coll((ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
-                    allOf(Coll(
-                        (registryBoxOut.R4[AvlTree].get == newRegistry),
-                        (_ergoNameHash == blake2b256(ergoNameBytes))
-                    ))
+                    (registryBoxOut.R4[AvlTree].get == newRegistry)                    ))
 
                 }
 
@@ -231,21 +231,61 @@
 
                 val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, ergonameIssuanceBoxOut)
 
+                val validEIP4Registers: Boolean = {
+
+                    val namePrefix = fromBase16("7e") // "~"
+                    val descriptionPrefix = fromBase16("4572676f4e616d65207e") // "ErgoName ~"
+                    val zeroDecimals = fromBase16("30") // "0"
+                    val pictureArtworkNFT = fromBase16("0101") // Coll(1, 1)
+                    val svgPrefix = fromBase16("646174613a696d6167652f7376672b786d6c3b6261736536342c") // "data:image/svg+xml;base64,
+
+
+                    val expectedName = namePrefix ++ ergoNameBytes
+                    val expectedDescription = descriptionPrefix ++ ergoNameBytes
+
+                    allOf(Coll(
+                        (ergonameIssuanceBoxOut.R4[Coll[Byte]].get == expectedName),
+                        (ergoNameIssuanceBoxOut.R5[Coll[Byte]].get == expectedDescription),
+                        (ergoNameIssuanceBoxOut.R6[Coll[Byte]].get == zeroDecimals),
+                        (ergoNameIssuanceBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
+                        (ergoNameIssuanceBoxOut.R8[Coll[Byte]].get.size == 32), // Hash size.
+                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].isDefined),      // There will be link to display image in wallets, e.g. Nautilus.
+                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix) // Enforce svg at best we can.
+                    ))
+
+                }
+
                 allOf(Coll(
                     isSigmaPropEqualToBoxProp(propAndBox),
-                    (ergonameIssuanceBoxOut.tokens(0) == (SELF.id, 1L))
+                    (ergonameIssuanceBoxOut.tokens(0) == (ergoNameTokenId, 1L)),
+                    validEIP4Registers,
+                    (issuanceBoxHash == blake2b256(ergoNameIssuanceBoxOut.bytesWithoutRef)) // This ensures that as long as the reveal proxy and commit are created correctly by anyone, the ErgoName will be processed by the bot.
+
                 ))
 
             }
 
             val validSubNameRegistryBoxOut: Boolean = {
 
-                val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+                val validAvlTree: Boolean = {
+
+                    val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+
+                    allOf(Coll(
+                        (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+                        (subNameRegistryBoxOut.R4[AvlTree].get.isInsertAllowed),
+                        (subNameRegistryBoxOut.R4[AvlTree].get.isUpdateAllowed == false),
+                        (subNameRegistryBoxOut.R4[AvlTree].get.isRemoveAllowed),
+                        (subNameRegistryBoxOut.R4[AvlTree].get.keyLength == 32),
+                        (subNameRegistryBoxOut.R4[AvlTree].get.valueLengthOpt.get == 32)
+                    ))
+    
+                }
 
                 allOf(Coll(
                     (blake2b256(subNameRegistryBoxOut.propositionBytes) == $subNameContractBytesHash),
                     (subNameRegistryBoxOut.tokens(0) == (ergoNameTokenId, 1L)), // We mint a token without following the asset standard, just used for identification purposes. This will have the same token id as the user's ErgoName.
-                    (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+                    validAvlTree,
                     (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
                     (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameBytes)
                 ))

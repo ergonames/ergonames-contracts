@@ -14,6 +14,7 @@
     // R5: Long             MinerFee
     // R6: Long             TxOperatorFee
     // R7: GroupElement     UserPKGroupElement
+    // R8: Coll[Byte]       IssuanceBoxHash
 
     // ===== Relevant Transactions ===== //
     // 1. Reveal
@@ -92,7 +93,7 @@
 
                 val validReveal: Boolean = {
 
-                    val revealHash: Coll[Byte] = blake2b256(revealBoxOut.bytesWithoutRef) // Bytes of box contents without transaction id and output index.
+                    val revealHash: Coll[Byte] = blake2b256(revealBoxOut.bytesWithoutRef) // Bytes of box contents without transaction id and output index. 
                     val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(1) == SELF.tokens(0)) else true
 
                     allOf(Coll(

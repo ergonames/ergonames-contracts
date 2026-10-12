@@ -82,15 +82,22 @@
             val parentSubNameRegistryBoxOut: Box            = OUTPUTS(1)
             val childSubNameRegistryBoxOut: Box             = OUTPUTS(2)
             val ergoNameNftBoxOut: Box                      = OUTPUTS(3)
+            val minerFee: Box                               = OUTPUTS(4)
 
             // Relevant Variables
-            val _subNameHash: Coll[Byte]                = getVar[Coll[Byte]](1).get
-            val _insertionProof: Coll[Byte]             = getVar[Coll[Byte]](2).get
+            val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](2).get
             
-            val subNameTokenId: Coll[Byte]              = ergoNameNftBoxIn.id // Thus all ErgoName token ids will be unique.
+            val subNameTokenId: Coll[Byte]  = ergoNameNftBoxIn.id // Thus all ErgoName token ids will be unique.
 
-            val subNameBytes: Coll[Byte]                = childSubNameRegistryBoxOut.R6[Coll[Byte]].get
-
+            val childPath: Coll[Byte] = childSubNameRegistryBoxOut.R6[Coll[Byte]].get
+            val labelSize: Int = childPath.size - parentErgoNameBytes.size - 1 // e.g. bob~alice - alice
+            val subNameBytes: Coll[Byte] = childPath.slice(0, labelSize) // e.g. bob
+            val namePrefix = fromBase16("7e") // "~"
+            val descriptionPrefix = fromBase16("4572676f4e616d65207e") // "ErgoName ~"
+            val zeroDecimals = fromBase16("30") // "0"
+            val pictureArtworkNFT = fromBase16("0101") // Coll(1, 1)
+            val svgPrefix = fromBase16("646174613a696d6167652f7376672b786d6c3b6261736536342c") // "data:image/svg+xml;base64,
+            
             val onlyOne: Boolean = (INPUTS(1).id == SELF.id)
 
             val validParentErgoName: Boolean = {
@@ -127,14 +134,12 @@
 
                 val validSubNameInsertion: Boolean = {
 
-                    val newRegistry: AvlTree = previousRegistry.insert(Coll((_subNameHash, subNameTokenId)), _insertionProof).get
+                    val subNameHash = blake2b256(subNameBytes)
+                    val newRegistry: AvlTree = previousRegistry.insert(Coll((subNameHash, subNameTokenId)), _insertionProof).get
 
-                    allOf(Coll(
-                        (parentSubNameRegistryBoxOut.R4[AvlTree].get == newRegistry),
-                        (_subNameHash == blake2b256(subNameBytes))
-                    ))
+                    (parentSubNameRegistryBoxOut.R4[AvlTree].get == newRegistry)
 
-                }
+                }fromBase16("646174613a696d6167652f7376672b786d6c3b6261736536342c")
 
                 val validSelfRecreation: Boolean = {
 
@@ -157,23 +162,64 @@
 
             val validChildSubNameRegistryBoxOut: Boolean = {
 
-                val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+                val validAvlTree: Boolean = {
+
+                    val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+
+                    allOf(Coll(
+                        (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+                        (childSubNameRegistryBoxOut.R4[AvlTree].get.isInsertAllowed),
+                        (childSubNameRegistryBoxOut.R4[AvlTree].get.isUpdateAllowed == false),
+                        (childSubNameRegistryBoxOut.R4[AvlTree].get.isRemoveAllowed),
+                        (childSubNameRegistryBoxOut.R4[AvlTree].get.keyLength == 32),
+                        (childSubNameRegistryBoxOut.R4[AvlTree].get.valueLengthOpt.get == 32)
+                    ))
+    
+                }
+
+                val validChildPath: Boolean = {
+
+                    allOf(Coll(
+                        (labelSize > 0),
+                        (childPath.slice(labelSize, labelSize + 1) == namePrefix),
+                        (childPath.slice(labelSize + 1, childPath.size) == parentErgoNameBytes),
+                    ))
+
+                }
 
                 allOf(Coll(
                     (childSubNameRegistryBoxOut.propositionBytes == SELF.propositionBytes),
                     (childSubNameRegistryBoxOut.tokens(0) == (subNameTokenId, 1L)),
-                    (childSubNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+                    validAvlTree,
                     (childSubNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
-                    (childSubNameRegistryBoxOut.R6[Coll[Byte]].get == subNameBytes)
+                    validChildPath
                 ))
 
             }
 
             val validSubNameNftBoxOut: Boolean = {
 
+                val validEIP4Registers: Boolean = {
+
+                    val expectedName = namePrefix ++ childPath
+                    val expectedDescription = descriptionPrefix ++ childPath
+
+                    allOf(Coll(
+                        (subNameNftBoxOut.R4[Coll[Byte]].get == expectedName),
+                        (subNameNftBoxOut.R5[Coll[Byte]].get == expectedDescription),
+                        (subNameNftBoxOut.R6[Coll[Byte]].get == zeroDecimals),
+                        (subNameNftBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
+                        (subNameNftBoxOut.R8[Coll[Byte]].get.size == 32), // Hash size.
+                        (subNameNftBoxOut.R9[Coll[Byte]].isDefined),      // There will be link to display image in wallets, e.g. Nautilus.
+                        (subNameNftBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix) // Enforce svg as best we can.
+                    ))
+
+                }
+
                 allOf(Coll(
                     (subNameNftBoxOut.propositionBytes == ergoNameNftBoxIn.propositionBytes),
-                    (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L))
+                    (subNameNftBoxOut.tokens(0) == (subNameTokenId, 1L)),
+                    validEIP4Registers
                 ))
 
             }

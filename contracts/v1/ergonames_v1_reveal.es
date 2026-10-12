@@ -16,7 +16,7 @@
     // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
     // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId
     // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
-    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
+    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId, IssuanceBoxHash], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -75,9 +75,9 @@
     val txOperatorFee: Long = revealData._2._2(1)
     val minBoxValue: Long = revealData._2._2(2)
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val isRefund: Boolean = (OUTPUTS.size == 3)
     val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
+    val isPayingWithToken: Boolean = (SELF.tokens.size > 1)
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -125,7 +125,7 @@
 
             // Reveal box validates correct commit box.
             // Commit box validates correct registry.
-            // Registry handles propery payment check.
+            // Registry validates correct commit box and handles propery payment check.
             val validCommitBoxIn: Boolean = {
 
                 allOf(Coll(
@@ -163,7 +163,6 @@
                 validCommitBoxIn,
                 validSubNameRegistryAmount,
                 validErgonameIssuanceAmount,
-                validErgoNameMint,
                 validCollectionTokenBurn,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
@@ -192,7 +191,15 @@
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
-                val validPaymentTokenTransfer: Boolean = (userPKBoxOut.tokens() == SELF.tokens())
+                val validPaymentTokenTransfer: Boolean = {
+
+                    if (isPayingWithToken) {
+                        userPKBoxOut.tokens == SELF.tokens.slice(1, SELF.tokens.size)
+                    } else {
+                        userPKBoxOut.tokens.size == 0
+                    }
+
+                } 
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
