@@ -103,7 +103,8 @@
                         
                         val data = revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
                         val fees = data._2._2
-                        if (fees.size == 3) {
+                        val secrets = data._2._1
+                        if (fees.size == 3 && secrets.size == 4) {
                             allOf(Coll(
                                 (fees(0) >= 10000000L), // MinerFee
                                 (fees(1) >= 20000000L), // TxOperatorFee

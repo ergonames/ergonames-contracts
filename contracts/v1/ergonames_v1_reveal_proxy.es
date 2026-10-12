@@ -66,7 +66,6 @@
     val txOperatorFee: Long = SELF.R6[Long].get
     val userPKGroupElement: GroupElement = SELF.R7[GroupElement].get
     val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
-    val isPayingWithToken: Boolean = (SELF.tokens.size == 1)
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -93,8 +92,6 @@
 
                 val validReveal: Boolean = {
 
-                    val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(1) == SELF.tokens(0)) else true
-
                     val validR9Hash: Boolean = {
                         val r9 = revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))]
                         if (r9.isDefined) {
@@ -118,7 +115,6 @@
 
                     allOf(Coll(
                         (revealBoxOut.value == SELF.value - minerFee - txOperatorFee), // Reveal box must have the miner fee + ergoname fee + min box value
-                        validPaymentToken,
                         (revealBoxOut.tokens.size == 1), // For now, since payment tokens are disabled. 
                         validR9Hash
                     ))
