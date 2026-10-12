@@ -16,7 +16,7 @@
     // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
     // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId
     // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
-    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId, IssuanceBoxHash], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
+    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -164,12 +164,11 @@
 
             allOf(Coll(
                 validCommitBoxIn,
-                validSubNameRegistryAmount,
                 validErgonameIssuanceAmount,
                 validCollectionTokenBurn,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
-                (OUTPUTS.size == 6)
+                (OUTPUTS.size == 5)
             ))
 
         }

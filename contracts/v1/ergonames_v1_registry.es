@@ -143,7 +143,6 @@
             val ergoNameBytes: Coll[Byte]                                       = revealData._2._1(0)            
             val commitSecret: Coll[Byte]                                        = revealData._2._1(1)
             val commitBoxId: Coll[Byte]                                         = revealData._2._1(2)
-            val issuanceBoxHash: Coll[Byte]                                     = revealData._2._1(3)
             val minerFee: Long                                                  = revealData._2._2(0)
             val txOperatorFee: Long                                             = revealData._2._2(1)
             val minBoxValue: Long                                               = revealData._2._2(2)
@@ -260,9 +259,7 @@
                 allOf(Coll(
                     isSigmaPropEqualToBoxProp(propAndBox),
                     (ergoNameIssuanceBoxOut.tokens(0) == (ergoNameTokenId, 1L)),
-                    validEIP4Registers,
-                    (issuanceBoxHash == blake2b256(ergoNameIssuanceBoxOut.bytesWithoutRef)) // This ensures that as long as the reveal proxy and commit are created correctly by anyone, the ErgoName will be processed by the bot.
-
+                    validEIP4Registers
                 ))
 
             }
@@ -420,7 +417,6 @@
                 validCommit,
                 validRegistryUpdate,
                 validErgoNameMint,
-                validSubNameRegistryBoxOut,
                 validTokenLimit,
                 validErgoNameFeeBoxOut
             ))
