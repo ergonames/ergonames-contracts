@@ -139,7 +139,7 @@
 
                     (parentSubNameRegistryBoxOut.R4[AvlTree].get == newRegistry)
 
-                }fromBase16("646174613a696d6167652f7376672b786d6c3b6261736536342c")
+                }
 
                 val validSelfRecreation: Boolean = {
 

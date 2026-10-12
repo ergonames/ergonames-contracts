@@ -97,8 +97,9 @@
                     val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(1) == SELF.tokens(0)) else true
 
                     allOf(Coll(
-                        (revealBoxOut.value == SELF.value - minerFee - txOperatorFee),
+                        (revealBoxOut.value == SELF.value - minerFee - txOperatorFee), // Reveal box must have the miner fee + ergoname fee + min box value
                         validPaymentToken,
+                        (revealBoxOut.tokens.size == 1) // For now, since payment tokens are disabled. 
                         (revealHash == revealBoxHash)
                     ))
 

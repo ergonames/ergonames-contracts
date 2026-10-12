@@ -92,10 +92,9 @@
 
             // Ouputs
             val ergonameIssuanceBoxOut: Box = OUTPUTS(0)
-            val subNameRegistryBoxOut: Box = OUTPUTS(2)
-            val ergoNameFeeBoxOut: Box = OUTPUTS(3)
-            val minerFeeBoxOut: Box = OUTPUTS(4)
-            val txOperatorFeeBoxOut: Box = OUTPUTS(5)
+            val ergoNameFeeBoxOut: Box = OUTPUTS(2)
+            val minerFeeBoxOut: Box = OUTPUTS(3)
+            val txOperatorFeeBoxOut: Box = OUTPUTS(4)
 
             val _ergoNameCollectionIssuerBox: Box = getVar[Box](1).get
 
@@ -138,7 +137,7 @@
             
             val validErgonameIssuanceAmount: Boolean = (ergonameIssuanceBoxOut.value >= minBoxValue) // It would equal this if the price had maximum slippage, i.e. no change for the user.
 
-            val validSubNameRegistryAmount: Boolean = (subNameRegistryBoxOut.value == minBoxValue)
+            //val validSubNameRegistryAmount: Boolean = (subNameRegistryBoxOut.value == minBoxValue)
 
             val validMinerFeeBoxOut: Boolean = {
 
@@ -157,6 +156,10 @@
                     (txOperatorFee == commitBoxIn.value)
                 ))
 
+            }
+
+            val validValueConservation: Boolean = {
+                SELF.value == ergoNameIssuanceBoxOut.value + ergoNameFeeBoxOut.value + minerFeeBoxOut.value // Ensures that reveal pays for everything.
             }
 
             allOf(Coll(

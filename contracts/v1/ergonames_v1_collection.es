@@ -28,8 +28,6 @@
     // ===== Compile Time Constants ($) ===== //
     // $revealErgoTreeBytesHash: Coll[Byte]
     // $revealProxyErgoTreeBytesHash: Coll[Byte]
-    // $ergonameCollectionSingletonTokenId: Coll[Byte]
-    // $ergonameCollectionTokenId: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
@@ -40,9 +38,9 @@
 
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val ergonameCollectionTokenAmount = SELF.tokens.fold(0L, { (sum: Long, t: (Coll[Byte], Long)) =>
-        if (t._1 == $ergonameCollectionTokenId) sum + t._2 else sum
-    })
+    val singletonTokenId: Coll[Byte]    = SELF.tokens(0)._1
+    val collectionTokenId: Coll[Byte]   = SELF.tokens(1)._1
+    val collectionTokenAmount: Long     = SELF.tokens(1)._2
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -61,27 +59,11 @@
 
             val validSelfRecreation: Boolean = {
 
-                val validSingletonTransfer: Boolean = {
-
-                    ergonameCollectionBoxOut.tokens.exists({ (t: (Coll[Byte], Long)) =>
-                        t._1 == $ergonameCollectionSingletonTokenId
-                    })
-
-                }
-
-                val validCollectionTokensTransfer: Boolean = {
-
-                    ergonameCollectionBoxOut.tokens.exists({ (t: (Coll[Byte], Long)) =>
-                        t == ($ergonameCollectionTokenId, ergonameCollectionTokenAmount - 1L)
-                    })
-
-                }
-
                 allOf(Coll(
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
-                    validSingletonTransfer,
-                    validCollectionTokensTransfer
+                    (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
+                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, collectionTokenAmount - 1L))
                 ))
 
             }
@@ -110,7 +92,7 @@
                         (revealBoxOut.R4[Int].get == 2),
                         validRoyalty,
                         (revealBoxOut.R6[(Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))].get == (Coll[(Coll[Byte], Coll[Byte])](), (Coll[(Coll[Byte], (Int, Int))](), Coll[(Coll[Byte], (Int, Int))]()))),
-                        (revealBoxOut.R7[Coll[Byte]].get == $ergonameCollectionTokenId),
+                        (revealBoxOut.R7[Coll[Byte]].get == collectionTokenId),
                         (revealBoxOut.R8[Coll[(Coll[Byte], Coll[Byte])]].get == Coll[(Coll[Byte], Coll[Byte])]())
                     ))
 
@@ -123,9 +105,9 @@
                         val fees = data._2._2
                         if (fees.size == 3) {
                             allOf(Coll(
-                                fees(0) >= 10000000L, // MinerFee
-                                fees(1) >= 20000000L, // TxOperatorFee
-                                fess(2) >= 10000000L  // MinBoxValue
+                                (fees(0) >= 10000000L), // MinerFee
+                                (fees(1) >= 20000000L), // TxOperatorFee
+                                (fees(2) >= 10000000L)  // MinBoxValue
                             ))
                         } else {
                             false
@@ -137,7 +119,7 @@
 
                 allOf(Coll(
                     (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
-                    (revealBoxOut.tokens(0) == ($ergonameCollectionTokenId, 1L)),
+                    (revealBoxOut.tokens(0) == (collectionTokenId, 1L)),
                     validEIP24Registers,
                     validR9Data
                 ))
@@ -172,7 +154,7 @@
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
                     (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
-                    (ergonameCollectionBoxOut.tokens(1) == ($ergonameCollectionTokenId, ergonameCollectionTokenAmount + 1L))
+                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, ergonameCollectionTokenAmount + 1L))
                 ))
 
             }
@@ -181,7 +163,7 @@
 
                 allOf(Coll(
                     (blake2b256(revealBoxIn.propositionBytes) == $revealErgoTreeBytesHash),
-                    (revealBoxIn.tokens(0) == ($ergonameCollectionTokenId, 1L))
+                    (revealBoxIn.tokens(0) == (collectionTokenId, 1L))
                 ))
 
             }

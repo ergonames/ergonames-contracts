@@ -124,10 +124,9 @@
             // Outputs
             val ergoNameIssuanceBoxOut: Box = OUTPUTS(0)
             val registryBoxOut: Box         = OUTPUTS(1)
-            val subNameRegistryBoxOut: Box  = OUTPUTS(2)
-            val ergoNameFeeBoxOut: Box      = OUTPUTS(3)
-            val minerFeeBoxOut: Box         = OUTPUTS(4)
-            val txOperatorFeeBoxOut: Box    = OUTPUTS(5)
+            val ergoNameFeeBoxOut: Box      = OUTPUTS(2)
+            val minerFeeBoxOut: Box         = OUTPUTS(3)
+            val txOperatorFeeBoxOut: Box    = OUTPUTS(4)
 
             // Relevant Variables
             val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](1).get
@@ -144,7 +143,10 @@
             val ergoNameBytes: Coll[Byte]                                       = revealData._2._1(0)            
             val commitSecret: Coll[Byte]                                        = revealData._2._1(1)
             val commitBoxId: Coll[Byte]                                         = revealData._2._1(2)
-            val issuanceBoxHash: Coll[Byte]                                       = revealData._2._1(3)
+            val issuanceBoxHash: Coll[Byte]                                     = revealData._2._1(3)
+            val minerFee: Long                                                  = revealData._2._2(0)
+            val txOperatorFee: Long                                             = revealData._2._2(1)
+            val minBoxValue: Long                                               = revealData._2._2(2)
 
             val validErgoNameFormat: Boolean = {
 
@@ -203,7 +205,7 @@
                     val ergoNameHash = blake2b256(ergoNameBytes)
                     val newRegistry: AvlTree = previousRegistry.insert(Coll((ergoNameHash, ergoNameTokenId)), _insertionProof).get
 
-                    (registryBoxOut.R4[AvlTree].get == newRegistry)                    ))
+                    (registryBoxOut.R4[AvlTree].get == newRegistry)
 
                 }
 
@@ -229,7 +231,7 @@
 
             val validErgoNameMint: Boolean = {
 
-                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, ergonameIssuanceBoxOut)
+                val propAndBox: (SigmaProp, Box) = (receiverPKSigmaProp, ergoNameIssuanceBoxOut)
 
                 val validEIP4Registers: Boolean = {
 
@@ -244,7 +246,7 @@
                     val expectedDescription = descriptionPrefix ++ ergoNameBytes
 
                     allOf(Coll(
-                        (ergonameIssuanceBoxOut.R4[Coll[Byte]].get == expectedName),
+                        (ergoNameIssuanceBoxOut.R4[Coll[Byte]].get == expectedName),
                         (ergoNameIssuanceBoxOut.R5[Coll[Byte]].get == expectedDescription),
                         (ergoNameIssuanceBoxOut.R6[Coll[Byte]].get == zeroDecimals),
                         (ergoNameIssuanceBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
@@ -257,7 +259,7 @@
 
                 allOf(Coll(
                     isSigmaPropEqualToBoxProp(propAndBox),
-                    (ergonameIssuanceBoxOut.tokens(0) == (ergoNameTokenId, 1L)),
+                    (ergoNameIssuanceBoxOut.tokens(0) == (ergoNameTokenId, 1L)),
                     validEIP4Registers,
                     (issuanceBoxHash == blake2b256(ergoNameIssuanceBoxOut.bytesWithoutRef)) // This ensures that as long as the reveal proxy and commit are created correctly by anyone, the ErgoName will be processed by the bot.
 
@@ -265,32 +267,32 @@
 
             }
 
-            val validSubNameRegistryBoxOut: Boolean = {
+            // val validSubNameRegistryBoxOut: Boolean = {
 
-                val validAvlTree: Boolean = {
+            //     val validAvlTree: Boolean = {
 
-                    val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+            //         val emptyDigest: Coll[Byte] = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
 
-                    allOf(Coll(
-                        (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
-                        (subNameRegistryBoxOut.R4[AvlTree].get.isInsertAllowed),
-                        (subNameRegistryBoxOut.R4[AvlTree].get.isUpdateAllowed == false),
-                        (subNameRegistryBoxOut.R4[AvlTree].get.isRemoveAllowed),
-                        (subNameRegistryBoxOut.R4[AvlTree].get.keyLength == 32),
-                        (subNameRegistryBoxOut.R4[AvlTree].get.valueLengthOpt.get == 32)
-                    ))
+            //         allOf(Coll(
+            //             (subNameRegistryBoxOut.R4[AvlTree].get.digest == emptyDigest),
+            //             (subNameRegistryBoxOut.R4[AvlTree].get.isInsertAllowed),
+            //             (subNameRegistryBoxOut.R4[AvlTree].get.isUpdateAllowed == false),
+            //             (subNameRegistryBoxOut.R4[AvlTree].get.isRemoveAllowed),
+            //             (subNameRegistryBoxOut.R4[AvlTree].get.keyLength == 32),
+            //             (subNameRegistryBoxOut.R4[AvlTree].get.valueLengthOpt.get == 32)
+            //         ))
     
-                }
+            //     }
 
-                allOf(Coll(
-                    (blake2b256(subNameRegistryBoxOut.propositionBytes) == $subNameContractBytesHash),
-                    (subNameRegistryBoxOut.tokens(0) == (ergoNameTokenId, 1L)), // We mint a token without following the asset standard, just used for identification purposes. This will have the same token id as the user's ErgoName.
-                    validAvlTree,
-                    (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
-                    (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameBytes)
-                ))
+            //     allOf(Coll(
+            //         (blake2b256(subNameRegistryBoxOut.propositionBytes) == $subNameContractBytesHash),
+            //         (subNameRegistryBoxOut.tokens(0) == (ergoNameTokenId, 1L)), // We mint a token without following the asset standard, just used for identification purposes. This will have the same token id as the user's ErgoName.
+            //         validAvlTree,
+            //         (subNameRegistryBoxOut.R5[(Coll[Byte], Long)].get == (Coll[Byte](), 0L)),
+            //         (subNameRegistryBoxOut.R6[Coll[Byte]].get == ergoNameBytes)
+            //     ))
 
-            }
+            // }
 
             val validTokenLimit: Boolean = {
 
@@ -324,8 +326,7 @@
 
                     val validFeePayment: Boolean = {
 
-                        val minBoxValue: Long   = subNameRegistryBoxOut.value
-                        val maxPrice: BigInt    = revealBoxIn.value.toBigInt - minerFeeBoxOut.value - subNameRegistryBoxOut.value - minBoxValue // Reveal box contains minerFee + subNameRegistry + minBox + maxPayment
+                        val maxPrice: BigInt    = revealBoxIn.value.toBigInt - minerFeeBoxOut.value - minBoxValue // Reveal box contains minerFee + subNameRegistry + minBox + maxPayment
                         val quotePrice: BigInt  = (maxPrice * 100.toBigInt) / 105.toBigInt 
                         val minPrice: BigInt    = (quotePrice * 95.toBigInt) / 100.toBigInt
                         val isWithin: Boolean   = (equivalentNanoErg >= minPrice) && (equivalentNanoErg <= maxPrice)
