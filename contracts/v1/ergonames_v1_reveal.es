@@ -16,7 +16,7 @@
     // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
     // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId
     // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
-    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
+    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId, ImageDataHash], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -91,7 +91,7 @@
             val commitBoxIn: Box = INPUTS(2)
 
             // Ouputs
-            val ergonameIssuanceBoxOut: Box = OUTPUTS(0)
+            val ergoNameIssuanceBoxOut: Box = OUTPUTS(0)
             val ergoNameFeeBoxOut: Box = OUTPUTS(2)
             val minerFeeBoxOut: Box = OUTPUTS(3)
             val txOperatorFeeBoxOut: Box = OUTPUTS(4)
@@ -135,7 +135,7 @@
 
             }
             
-            val validErgonameIssuanceAmount: Boolean = (ergonameIssuanceBoxOut.value >= minBoxValue) // It would equal this if the price had maximum slippage, i.e. no change for the user.
+            val validErgonameIssuanceAmount: Boolean = (ergoNameIssuanceBoxOut.value >= minBoxValue) // It would equal this if the price had maximum slippage, i.e. no change for the user.
 
             //val validSubNameRegistryAmount: Boolean = (subNameRegistryBoxOut.value == minBoxValue)
 
@@ -156,10 +156,6 @@
                     (txOperatorFee == commitBoxIn.value)
                 ))
 
-            }
-
-            val validValueConservation: Boolean = {
-                SELF.value == ergoNameIssuanceBoxOut.value + ergoNameFeeBoxOut.value + minerFeeBoxOut.value // Ensures that reveal pays for everything.
             }
 
             allOf(Coll(

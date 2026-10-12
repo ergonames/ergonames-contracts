@@ -154,7 +154,7 @@
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
                     (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
-                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, ergonameCollectionTokenAmount + 1L))
+                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, collectionTokenAmount + 1L))
                 ))
 
             }

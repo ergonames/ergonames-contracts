@@ -143,6 +143,7 @@
             val ergoNameBytes: Coll[Byte]                                       = revealData._2._1(0)            
             val commitSecret: Coll[Byte]                                        = revealData._2._1(1)
             val commitBoxId: Coll[Byte]                                         = revealData._2._1(2)
+            val imageDataHash: Coll[Byte]                                       = revealData._2._1(3)
             val minerFee: Long                                                  = revealData._2._2(0)
             val txOperatorFee: Long                                             = revealData._2._2(1)
             val minBoxValue: Long                                               = revealData._2._2(2)
@@ -251,7 +252,8 @@
                         (ergoNameIssuanceBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
                         (ergoNameIssuanceBoxOut.R8[Coll[Byte]].get.size == 32), // Hash size.
                         (ergoNameIssuanceBoxOut.R9[Coll[Byte]].isDefined),      // There will be link to display image in wallets, e.g. Nautilus.
-                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix) // Enforce svg at best we can.
+                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix), // Enforce svg at best we can.
+                        (blake2b256(ergoNameIssuanceBoxOut.R8[Coll[Byte]].get ++ ergoNameIssuanceBoxOut.R9[Coll[Byte]].get) == imageDataHash) // Ensure no malformed image.
                     ))
 
                 }
@@ -305,7 +307,7 @@
 
                 })
 
-                (outputs_sum == 2L)
+                (outputs_sum == 1L)
             }
 
             val validErgoNameFeeBoxOut: Boolean = {
