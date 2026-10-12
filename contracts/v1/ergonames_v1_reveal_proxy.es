@@ -137,7 +137,8 @@
                     validReveal,
                     validMinerFee,
                     validTxOperatorFee,
-                    (OUTPUTS.size == 4)
+                    (OUTPUTS.size == 4),
+                    (SELF.tokens.size == 0)
                 ))
 
             }
