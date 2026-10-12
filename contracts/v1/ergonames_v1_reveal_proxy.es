@@ -101,9 +101,9 @@
                             val fees = data._2._2
                             
                             val ge_bytes = ge.getEncoded
-                            val secrets_bytes = secrets.flatMap({ (secret: Coll[Byte]) => secret})
+                            val secrets_bytes = secrets.flatMap({ (secret: Coll[Byte]) => longToByteArray(secret.size.toLong) ++ secret})
                             val fees_bytes = fees.flatMap({(fee: Long) => longToByteArray(fee)})
-                            val bytes = ge_bytes ++ secrets_bytes ++ fees_bytes
+                            val bytes = ge_bytes ++ longToByteArray(secrets.size.toLong) ++ secrets_bytes ++ longToByteArray(fees.size.toLong) ++ fees_bytes
                             val bytes_hash = blake2b256(bytes)
 
                             (bytes_hash == revealR9Hash)

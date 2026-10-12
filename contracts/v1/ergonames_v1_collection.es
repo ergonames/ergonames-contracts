@@ -108,7 +108,11 @@
                             allOf(Coll(
                                 (fees(0) >= 10000000L), // MinerFee
                                 (fees(1) >= 20000000L), // TxOperatorFee
-                                (fees(2) >= 10000000L)  // MinBoxValue
+                                (fees(2) >= 10000000L), // MinBoxValue
+                                (secrets(0).size > 0),
+                                (secrets(1).size == 32),
+                                (secrets(2).size == 32),
+                                (secrets(3).size == 32)
                             ))
                         } else {
                             false
