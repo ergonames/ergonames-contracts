@@ -10,7 +10,7 @@
     // Tokens
     // 1. (PaymentTokenId, PaymentTokenAmount) // If ErgoName can be purchased with a custom token.
     // Registers
-    // R4: Coll[Byte]       RevealBoxHash
+    // R4: Coll[Byte]       RevealR9Hash
     // R5: Long             MinerFee
     // R6: Long             TxOperatorFee
     // R7: GroupElement     UserPKGroupElement
@@ -61,7 +61,7 @@
 
     // ===== Relevant Variables ===== //
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
-    val revealBoxHash: Coll[Byte] = SELF.R4[Coll[Byte]].get
+    val revealR9Hash: Coll[Byte] = SELF.R4[Coll[Byte]].get
     val minerFee: Long = SELF.R5[Long].get
     val txOperatorFee: Long = SELF.R6[Long].get
     val userPKGroupElement: GroupElement = SELF.R7[GroupElement].get
@@ -93,14 +93,34 @@
 
                 val validReveal: Boolean = {
 
-                    val revealHash: Coll[Byte] = blake2b256(revealBoxOut.bytesWithoutRef) // Bytes of box contents without transaction id and output index. 
                     val validPaymentToken: Boolean = if (isPayingWithToken) (revealBoxOut.tokens(1) == SELF.tokens(0)) else true
+
+                    val validR9Hash: Boolean = {
+                        val r9 = revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))]
+                        if (r9.isDefined) {
+                            val data = r9.get
+                            val ge = data._1
+                            val secrets = data._2._1
+                            val fees = data._2._2
+                            
+                            val ge_bytes = ge.getEncoded
+                            val secrets_bytes = secrets.flatMap({ (secret: Coll[Byte]) => secret})
+                            val fees_bytes = fees.flatMap({(fee: Long) => longToByteArray(fee)})
+                            val bytes = ge_bytes ++ secrets_bytes ++ fees_bytes
+                            val bytes_hash = blake2b256(bytes)
+
+                            (bytes_hash == revealR9Hash)
+                        
+                        } else {
+                            false
+                        }
+                    }
 
                     allOf(Coll(
                         (revealBoxOut.value == SELF.value - minerFee - txOperatorFee), // Reveal box must have the miner fee + ergoname fee + min box value
                         validPaymentToken,
                         (revealBoxOut.tokens.size == 1), // For now, since payment tokens are disabled. 
-                        (revealHash == revealBoxHash)
+                        validR9Hash
                     ))
 
                 }
