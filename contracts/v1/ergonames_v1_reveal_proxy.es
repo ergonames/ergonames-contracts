@@ -14,7 +14,6 @@
     // R5: Long             MinerFee
     // R6: Long             TxOperatorFee
     // R7: GroupElement     UserPKGroupElement
-    // R8: Coll[Byte]       IssuanceBoxHash
 
     // ===== Relevant Transactions ===== //
     // 1. Reveal
