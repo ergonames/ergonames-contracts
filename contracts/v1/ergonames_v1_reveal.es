@@ -34,6 +34,7 @@
     // $commitContractBytesHash: Coll[Byte]
     // $ergoNameCollectionSingletonTokenId: Coll[Byte]
     // $ergoNameCollectionTokenId: Coll[Byte]
+    // $registrySingletonTokenId: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int
@@ -124,6 +125,12 @@
 
             }
 
+            val validRegistry: Boolean = {
+
+                (registryBoxIn.tokens(0)._1 == $registrySingletonTokenId)
+
+            }
+
             val validCommitBoxIn: Boolean = {
 
                 allOf(Coll(
@@ -160,6 +167,7 @@
                 onlyOne,
                 validErgoNameCollection,
                 validCollectionTokenBurn,
+                validRegistry,
                 validCommitBoxIn,
                 validErgonameIssuanceAmount,
                 validMinerFeeBoxOut,
