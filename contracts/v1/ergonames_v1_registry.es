@@ -24,10 +24,11 @@
     // ===== Compile Time Constants ($) ===== //
     // $ergoNameCollectionTokenId: Coll[Byte]
     // $revealContractBytesHash: Coll[Byte]
-    // $subNameContractBytesHash: Coll[Byte]
+    // $commitContractBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $usdV2OracleSingletonTokenId: Coll[Byte]
+    // $updateNFT: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int                 - Integer representing the transaction type.
@@ -148,6 +149,8 @@
             val txOperatorFee: Long                                             = revealData._2._2(1)
             val minBoxValue: Long                                               = revealData._2._2(2)
 
+            val onlyOne = (INPUTS(1).id == SELF.id)
+
             val validErgoNameFormat: Boolean = {
 
                 allOf(Coll(
@@ -177,9 +180,12 @@
                 val validCommitAge: Boolean         = (commitAge >= minCommitBoxAge) && (commitAge <= maxCommitBoxAge)
                 val validCalculatedHash: Boolean    = (calculatedHash == commitHash)
 
+                val validContract = (blake2b256(commitBoxIn.propositionBytes) == $commitContractBytesHash)
+
                 allOf(Coll(
                     validCommitAge,
-                    validCalculatedHash
+                    validCalculatedHash,
+                    validContract
                 ))
 
             }
@@ -414,6 +420,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validErgoNameFormat,
                 validReveal,
                 validCommit,
@@ -429,15 +436,9 @@
 
     } else {
 
-        val adoo = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
-        val lgd = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
-        val balb = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
-        val mgpai = PK("9g5yzitxX53B4RVi1DHLjrMx7iwTQn38kLG2XVVkhvHvcB1TcEz")
-        val msig_addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
-        val min_required_signatures: Int = 2
-        val ergoname_msig_sigmaprop: SigmaProp = atLeast(min_required_signatures, msig_addresses)
-
-        ergoname_msig_sigmaprop
+        // Other than the registry contract itself, this can allow for new reveal and commit contracts.
+        val validUpdate = (INPUTS(0).tokens(0)._1 == $updateNFT)
+        sigmaProp(validUpdate)
 
     }
 

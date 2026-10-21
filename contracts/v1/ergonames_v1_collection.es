@@ -29,6 +29,7 @@
     // $revealErgoTreeBytesHash: Coll[Byte]
     // $revealProxyErgoTreeBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
+    // $updateNFT: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int
@@ -56,6 +57,8 @@
             val revealBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
             val txOperatorFeeBoxOut: Box = OUTPUTS(3)
+
+            val onlyOne = (INPUTS(0).id == SELF.id)
 
             val validSelfRecreation: Boolean = {
 
@@ -132,6 +135,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validSelfRecreation,
                 validRevealProxy,
                 validReveal
@@ -152,6 +156,8 @@
             val ergonameCollectionBoxOut: Box = OUTPUTS(0)
             val userPKBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
+
+            val onlyOne = (INPUTS(0).id == SELF.id)
 
             val validSelfRecreation: Boolean = {
 
@@ -174,6 +180,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validSelfRecreation,
                 validRevealInput
             ))
@@ -184,15 +191,9 @@
 
     } else {
 
-        val adoo = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
-        val lgd = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
-        val balb = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
-        val mgpai = PK("9g5yzitxX53B4RVi1DHLjrMx7iwTQn38kLG2XVVkhvHvcB1TcEz")
-        val msig_addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
-        val min_required_signatures: Int = 2
-        val ergoname_msig_sigmaprop: SigmaProp = atLeast(min_required_signatures, msig_addresses)
-
-        ergoname_msig_sigmaprop
+        // Other than the collection contract itself, this can allow for new reveal and reveal proxy contracts.
+        val validUpdate = (INPUTS(0).tokens(0)._1 == $updateNFT)
+        sigmaProp(validUpdate)
 
     }
 

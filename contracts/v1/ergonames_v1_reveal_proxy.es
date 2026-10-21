@@ -81,13 +81,9 @@
                 val minerFeeBoxOut: Box = OUTPUTS(2)
                 val txOperatorFeeBoxOut: Box = OUTPUTS(3)
 
-                val validCollection: Boolean = {
+                val onlyOne = (INPUTS(1).id == SELF.id)
 
-                    ergonameCollectionBoxIn.tokens.exists({ (t: (Coll[Byte], Long)) =>
-                        t._1 == $ergoNameCollectionSingletonTokenId
-                    })
-
-                }
+                val validCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId)
 
                 val validReveal: Boolean = {
 
@@ -132,6 +128,7 @@
                 val validTxOperatorFee: Boolean = (txOperatorFeeBoxOut.value == txOperatorFee)
 
                 allOf(Coll(
+                    onlyOne,
                     validCollection,
                     validReveal,
                     validMinerFee,
@@ -151,6 +148,8 @@
             // Outputs
             val userPKBoxOut: Box = OUTPUTS(0)
             val minerFeeBoxOut: Box = OUTPUTS(1)
+
+            val onlyOne = (INPUTS(0).id == SELF.id)
 
             val validUser: Boolean = {
 
@@ -174,13 +173,14 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validUser,
                 validMinerFee
             ))
             
         }
 
-        sigmaProp(validRefundTx) && userPKSigmaProp
+        sigmaProp(validRefundTx) && userPKSigmaProp // No update path, reveal proxy can only change if the collection contract changes.
 
     }
 

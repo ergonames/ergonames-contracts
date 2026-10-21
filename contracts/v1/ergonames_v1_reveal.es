@@ -98,6 +98,8 @@
 
             val _ergoNameCollectionIssuerBox: Box = getVar[Box](1).get
 
+            val onlyOne = (INPUTS(0).id == SELF.id)
+
             val validErgoNameCollection: Boolean = {
 
                 val validCollection: Boolean = ($ergoNameCollectionTokenId == _ergoNameCollectionIssuerBox.id)
@@ -122,14 +124,10 @@
 
             }
 
-            // Reveal box validates correct commit box.
-            // Commit box validates correct registry.
-            // Registry validates correct commit box and handles propery payment check.
             val validCommitBoxIn: Boolean = {
 
                 allOf(Coll(
                     (commitBoxIn.id == commitBoxId),
-                    (blake2b256(commitBoxIn.propositionBytes) == $commitContractBytesHash),
                     (commitBoxIn.R5[GroupElement].get == userPKGroupElement)
                 ))
 
@@ -159,9 +157,11 @@
             }
 
             allOf(Coll(
+                onlyOne,
+                validErgoNameCollection,
+                validCollectionTokenBurn,
                 validCommitBoxIn,
                 validErgonameIssuanceAmount,
-                validCollectionTokenBurn,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
                 (OUTPUTS.size == 5)
@@ -183,6 +183,8 @@
             val ergonameCollectionBoxOut: Box = OUTPUTS(0)
             val userPKBoxOut: Box = OUTPUTS(1)
             val minerFeeBoxOut: Box = OUTPUTS(2)
+
+            val onlyOne = (INPUTS(1).id == SELF.id)
 
             val validErgoNameCollection: Boolean = (ergonameCollectionBoxIn.tokens(0)._1 == $ergoNameCollectionSingletonTokenId) // If ErgoName collection token amount is Long.MaxValue, we can just burn the token, no need for this check.
 
@@ -218,6 +220,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validErgoNameCollection,
                 validUser,
                 validMinerFee
@@ -225,7 +228,7 @@
 
         }
 
-        sigmaProp(validRefundTx) && userPKSigmaProp
+        sigmaProp(validRefundTx) && userPKSigmaProp // No update path, reveal contract can only change if the collection and registry contracts change.
 
     }
 

@@ -39,7 +39,7 @@
 
     val shares: Coll[Long] = Coll(500L, 200L, 100L, 50L, 150L)
     val recipientCount: Int = addresses.size
-    val miner_fee: Long = 10000000 // The msig update path could change this value, for example, if Ergo blockchain parameters change.
+    val miner_fee: Long = 1000000 // The msig update path could change this value, for example, if Ergo blockchain parameters change.
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -81,7 +81,9 @@
 
     } else {
 
-        ergoname_msig_sigmaprop // Update the miner fee, for example.
+        // Update the miner fee, for example.
+        val validUpdate = (INPUTS(0).tokens(0)._1 == $updateNFT)
+        sigmaProp(validUpdate)
 
     }
 

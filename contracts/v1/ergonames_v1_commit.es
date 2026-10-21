@@ -103,6 +103,8 @@
             val userPKBoxOut: Box = OUTPUTS(0)
             val minerFeeBoxOut: Box = OUTPUTS(1)
 
+            val onlyOne = (INPUTS(0).id == SELF.id)
+
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
@@ -124,6 +126,7 @@
             }
 
             allOf(Coll(
+                onlyOne,
                 validUser,
                 validMinerFee
             ))
@@ -133,7 +136,7 @@
         sigmaProp(validRefundTx) && userPKSigmaProp
 
     } else {
-        sigmaProp(false)
+        sigmaProp(false) // No update path, commit can only change if the registry contract changes.
     }
 
 }
