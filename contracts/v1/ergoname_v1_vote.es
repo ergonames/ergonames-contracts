@@ -21,7 +21,8 @@
   // Context Variables: None
 
   // ===== Compile Time Constants ($) ===== //
-  // $updateNFT: Coll[Byte]
+  // $collectionUpdateNFT: Coll[Byte]
+  // $registryUpdateNFT: Coll[Byte]
 
   // ===== Context Variables (_) ===== //
   // None
@@ -29,7 +30,8 @@
   // ===== User Defined Functions ===== //
   // None
 
-  val updateNFT = fromBase64("$updateNFT")
+  val collectionUpdateNFT = $collectionUpdateNFT
+  val registryUpdateNFT = $registryUpdateNFT
 
   val pubKey = SELF.R4[GroupElement].get
 
@@ -47,7 +49,7 @@
 
   val notVoted = (output.R5[Coll[Byte]].isDefined == false)
   val update = 
-    (INPUTS(0).tokens(0)._1 == updateNFT) && 
+    (INPUTS(0).tokens(0)._1 == collectionUpdateNFT || registryUpdateNFT) && 
     notVoted
 
   // Note: We want that during an update, a new valid vote should not be generated

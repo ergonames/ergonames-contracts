@@ -28,7 +28,7 @@
     // $ergoNameFeeContractBytesHash: Coll[Byte]
     // $configSingletonTokenId: Coll[Byte]
     // $usdV2OracleSingletonTokenId: Coll[Byte]
-    // $updateNFT: Coll[Byte]
+    // $registryUpdateNFT: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int                 - Integer representing the transaction type.
@@ -437,7 +437,7 @@
     } else {
 
         // Other than the registry contract itself, this can allow for new reveal and commit contracts.
-        val validUpdate = (INPUTS(0).tokens(0)._1 == $updateNFT)
+        val validUpdate = (INPUTS(0).tokens(0)._1 == $registryUpdateNFT)
         sigmaProp(validUpdate)
 
     }

@@ -81,9 +81,7 @@
 
     } else {
 
-        // Update the miner fee, for example.
-        val validUpdate = (INPUTS(0).tokens(0)._1 == $updateNFT)
-        sigmaProp(validUpdate)
+        sigmaProp(false) // No update, this contract is fine, a new contract can be set when the registry contract is updated.
 
     }
 

@@ -29,7 +29,7 @@
     // $revealErgoTreeBytesHash: Coll[Byte]
     // $revealProxyErgoTreeBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
-    // $updateNFT: Coll[Byte]
+    // $collectionUpdateNFT: Coll[Byte]
 
     // ===== Context Variables (_) ===== //
     // _action: Int
@@ -192,7 +192,7 @@
     } else {
 
         // Other than the collection contract itself, this can allow for new reveal and reveal proxy contracts.
-        val validUpdate = (INPUTS(0).tokens(0)._1 == $updateNFT)
+        val validUpdate = (INPUTS(0).tokens(0)._1 == $collectionUpdateNFT)
         sigmaProp(validUpdate)
 
     }

@@ -7,7 +7,7 @@
 
   // ===== Box Contents ===== //
   // Tokens
-  // 1. (UpdateSingletonId, 1L)
+  // 1. (UpdateCollectionTokenId, 1L)
   // Registers
   // None
 
@@ -19,7 +19,7 @@
   // Context Variables: None
 
   // ===== Compile Time Constants ($) ===== //
-  // $contractToUpdateNFT: Coll[Byte]
+  // $collectionNFT: Coll[Byte]
   // $voteTokenId: Coll[Byte]
 
   // ===== Context Variables (_) ===== //
@@ -29,7 +29,7 @@
   // isValidVote: Box => Boolean
 
   // contractToUpdateNFT is whether collectionNFT or registryNFT
-  val contractToUpdateNFT = $contractToUpdateNFT
+  val contractToUpdateNFT = $collectionNFT
 
   val voteTokenId = $voteTokenId
 
@@ -52,8 +52,8 @@
     (contractToUpdateBoxIn.tokens(0)._1 == contractToUpdateNFT)
 
   val validContractToUpdateOut = 
-    (contractToUpdateBoxIn.tokens == contractToUpdateBoxOut.tokens) &&
-    (contractToUpdateBoxIn.value == contractToUpdateBoxOut.value)
+    (contractToUpdateBoxIn.value == contractToUpdateBoxOut.value) &&
+    (contractToUpdateBoxIn.tokens == contractToUpdateBoxOut.tokens) // Collection box has no registers.
 
   // burning of update NFT token is not possible, but it is possible to update a contract to
   // not to rely to update NFT anymore
@@ -69,9 +69,9 @@
     (b.R6[Coll[Byte]].get == contractToUpdateBoxOutHash) // check value voted for
   }
 
-  val voteBoxes = INPUTS.filter(isValidBallot)
+  val voteBoxes = INPUTS.filter(isValidVote)
 
-  val votesCount = ballotBoxes.fold(0L, {(accum: Long, b: Box) => accum + b.tokens(0)._2})
+  val votesCount = voteBoxes.fold(0L, {(accum: Long, b: Box) => accum + b.tokens(0)._2})
 
   val validVotes = votesCount >= minVotes
 
