@@ -256,7 +256,7 @@
                         (ergoNameIssuanceBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
                         (ergoNameIssuanceBoxOut.R8[Coll[Byte]].get.size == 32), // Hash size.
                         (ergoNameIssuanceBoxOut.R9[Coll[Byte]].isDefined),      // There will be link to display image in wallets, e.g. Nautilus.
-                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix), // Enforce svg at best we can.
+                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix), // Enforce svg as best we can.
                         (blake2b256(ergoNameIssuanceBoxOut.R8[Coll[Byte]].get ++ ergoNameIssuanceBoxOut.R9[Coll[Byte]].get) == imageDataHash) // Ensure no malformed image.
                     ))
 
