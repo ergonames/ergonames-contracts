@@ -48,8 +48,10 @@
   val castVote = proveDlog(pubKey)
 
   val notVoted = (output.R5[Coll[Byte]].isDefined == false)
+  val isCollectionUpdate = (INPUTS(0).tokens(0)._1 == collectionUpdateNFT)
+  val isRegistryUpdate = (INPUTS(0).tokens(0)._1 == registryUpdateNFT)
   val update = 
-    (INPUTS(0).tokens(0)._1 == collectionUpdateNFT || registryUpdateNFT) && 
+    (isCollectionUpdate || isRegistryUpdate) && 
     notVoted
 
   // Note: We want that during an update, a new valid vote should not be generated

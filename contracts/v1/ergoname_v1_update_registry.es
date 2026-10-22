@@ -54,7 +54,7 @@
   val validContractToUpdateOut = 
     (contractToUpdateBoxIn.value == contractToUpdateBoxOut.value) &&
     (contractToUpdateBoxIn.tokens == contractToUpdateBoxOut.tokens) &&
-    (contractToUpdateBoxIn.R4[AvlTree].get == contractToUpdateBoxOut.R4[AvlTree]) &&
+    (contractToUpdateBoxIn.R4[AvlTree].get == contractToUpdateBoxOut.R4[AvlTree].get) &&
     (contractToUpdateBoxIn.R5[(Coll[Byte], Long)].get == contractToUpdateBoxOut.R5[(Coll[Byte], Long)].get) &&
     (contractToUpdateBoxIn.R6[(Int, Int)].get == contractToUpdateBoxOut.R6[(Int, Int)].get) // R7 can change if we want to change prices in the future.
 
