@@ -436,7 +436,7 @@
 
     } else {
 
-        // Other than the registry contract itself, this can allow for new reveal and commit contracts.
+        // Other than the registry contract itself, this can allow for new reveal, commit, and fee contracts.
         val validUpdate = (INPUTS(0).tokens(0)._1 == $registryUpdateNFT)
         sigmaProp(validUpdate)
 
