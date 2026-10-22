@@ -35,8 +35,6 @@
 
     // ===== Context Variables (_) ===== //
     // _action: Int                 - Integer representing the transaction type.
-    // _subNameHash: Coll[Byte]     - Hash of the ErgoName SubName to register.
-    // _insertionProof: Coll[Byte]  - Proof that the SubNameHash and SubNameTokenId were inserted into the registry avl tree.
 
     // ===== User Defined Functions ===== //
     // def isValidAscii: (Coll[Byte] => Boolean)
@@ -73,6 +71,8 @@
 
         // ===== Mint SubName Tx ===== //
         val validMintSubNameTx: Boolean = {
+
+            // _insertionProof: Coll[Byte]  - Proof that the SubNameHash and SubNameTokenId were inserted into the registry avl tree.
 
             // Inputs
             val ergoNameNftBoxIn: Box           = INPUTS(0)

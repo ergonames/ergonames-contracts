@@ -32,7 +32,6 @@
 
     // ===== Context Variables (_) ===== //
     // _action: Int                 - Integer representing the transaction type.
-    // _ergoNameHash: Coll[Byte]    - Hash of the ErgoName to register.
     // _insertionProof: Coll[Byte]  - Proof that the ErgoNameHash and ErgoNameTokenId were inserted into the registry avl tree.
     // _lookupProof: Coll[Byte]     - Proof for getting a value from the config avl tree.
 
@@ -130,8 +129,7 @@
             val txOperatorFeeBoxOut: Box    = OUTPUTS(4)
 
             // Relevant Variables
-            val _ergoNameHash: Coll[Byte]   = getVar[Coll[Byte]](1).get
-            val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](2).get
+            val _insertionProof: Coll[Byte] = getVar[Coll[Byte]](1).get
             
             val ergoNameTokenId: Coll[Byte]             = revealBoxIn.id // Thus all ErgoName token ids will be unique.
 
