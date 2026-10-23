@@ -6,6 +6,7 @@
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 
     // ===== Box Contents ===== //
+    // Value: The value is used to pay the tx operator fee for the mint, value >= 2_000_000 nanoERG.
     // Tokens
     // None
     // Registers
@@ -16,7 +17,7 @@
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
     // Inputs: Reveal, Registry, Commit
-    // Data Inputs: USDv2OracleDatapoint, ?ErgoDexErg2Token, ?Config
+    // Data Inputs: USDv2OracleDatapoint, ?Config
     // Outputs: ErgoNameIssuance, Registry, SubNameRegistry, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: None
     // 2. Refund
@@ -111,6 +112,7 @@
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
+                    (userPKBoxOut.tokens == SELF.tokens),
                     isSigmaPropEqualToBoxProp(propAndBox)
                 ))
 
@@ -120,15 +122,22 @@
 
                 allOf(Coll(
                     (minerFeeBoxOut.value == minerFee),
-                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash)
+                    (blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash),
+                    (minerFeeBoxOut.tokens.size == 0)
                 ))
 
+            }
+
+            val validSize: Boolean = {
+                (OUTPUTS.size == 2) &&
+                (INPUTS.size == 1)
             }
 
             allOf(Coll(
                 onlyOne,
                 validUser,
-                validMinerFee
+                validMinerFee,
+                validSize
             ))
 
         }
