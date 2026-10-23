@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.7.5 Chrome/114.0.5735.289 Electron/25.8.1 Safari/537.36" pages="3">
   <diagram name="ergoname" id="_t__87RqGcl-udBQx4Er">
-    <mxGraphModel dx="-475" dy="-335" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+    <mxGraphModel dx="-521" dy="-373" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -433,8 +433,8 @@
         <mxCell id="jPkPmjqQgCSFHaqOrw5d-6" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;rounded=0;fontStyle=1;fontSize=7;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="Miner&lt;br&gt;Fee" vertex="1">
           <mxGeometry height="40" width="40" x="1800" y="1010" as="geometry" />
         </mxCell>
-        <mxCell id="chABcHkUQvam2ELzd07t-1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" value="Reveal Proxy and Reveal" vertex="1">
-          <mxGeometry height="40" width="160" x="1160" y="1440" as="geometry" />
+        <mxCell id="chABcHkUQvam2ELzd07t-1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" value="Reveal Proxy and Reveal v2" vertex="1">
+          <mxGeometry height="40" width="200" x="1160" y="1440" as="geometry" />
         </mxCell>
         <mxCell id="chABcHkUQvam2ELzd07t-2" edge="1" parent="1" source="chABcHkUQvam2ELzd07t-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;" target="chABcHkUQvam2ELzd07t-10">
           <mxGeometry relative="1" as="geometry">
@@ -453,14 +453,6 @@
             <Array as="points">
               <mxPoint x="1380" y="1540" />
               <mxPoint x="1380" y="1640" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="chABcHkUQvam2ELzd07t-5" edge="1" parent="1" source="chABcHkUQvam2ELzd07t-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;" target="chABcHkUQvam2ELzd07t-27">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1380" y="1540" />
-              <mxPoint x="1380" y="1690" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -519,9 +511,6 @@
         </mxCell>
         <mxCell id="chABcHkUQvam2ELzd07t-26" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=5;strokeWidth=1;fillColor=#bac8d3;strokeColor=#23445d;glass=0;sketch=0;verticalAlign=bottom;fontStyle=1;rotation=0;align=center;" value="ErgoName Collection Singleton" vertex="1">
           <mxGeometry height="10" width="80" x="1450" y="1525" as="geometry" />
-        </mxCell>
-        <mxCell id="chABcHkUQvam2ELzd07t-27" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;rounded=0;fontStyle=1;fontSize=7;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Tx&lt;br&gt;Operator Fee" vertex="1">
-          <mxGeometry height="40" width="40" x="1400" y="1670" as="geometry" />
         </mxCell>
         <mxCell id="chABcHkUQvam2ELzd07t-28" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;rounded=0;fontStyle=1;fontSize=7;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" value="Miner&lt;br&gt;Fee" vertex="1">
           <mxGeometry height="40" width="40" x="1400" y="1620" as="geometry" />

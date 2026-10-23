@@ -12,7 +12,6 @@
     // Registers
     // R4: Coll[Byte]       CommitHash
     // R5: GroupElement     UserPKGroupElement
-    // R6: Long             MinerFee
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
@@ -62,7 +61,7 @@
     val minerFeeErgoTreeHash = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val userPKGroupElement: GroupElement = SELF.R5[GroupElement].get
     val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
-    val minerFee: Long = SELF.R6[Long].get
+    val minerFee: Long = 1000000L
     val creationHeight: Int = SELF.creationInfo._1
     val isOldEnough: Boolean = HEIGHT - creationHeight >= $maxCommitBoxAge
 

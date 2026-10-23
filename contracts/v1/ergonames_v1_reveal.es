@@ -16,18 +16,18 @@
     // R6: (Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))   ArtworkTraits
     // R7: Coll[Byte]                                                                                           ArtworkCollectionTokenId
     // R8: Coll[(Coll[Byte], Coll[Byte])]                                                                       ArtworkAdditionalInformation
-    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId, ImageDataHash], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
+    // R9: (GroupElement, (Coll[Coll[Byte]], Coll[Long]))                                                       RevealData: (UserPKGroupElement, (Coll[ErgoNameBytes, CommitSecret, CommitBoxId, ImageDataHash, RawSVG], Coll[MinerFee, TxOperatorFee, MinBoxValue]))
 
     // ===== Relevant Transactions ===== //
     // 1. Mint ErgoName
     // Inputs: Reveal, Registry Commit
-    // Data Inputs: USDv2OracleDatapoint, ?ErgoDexErg2Token, ?Config
+    // Data Inputs: USDv2OracleDatapoint, ?Config
     // Outputs: Registry, SubNameRegistry, ErgoNameIssuer, ErgoNameFee, MinerFee, TxOperatorFee
     // Context Variables: ErgoNameCollectionIssuerBox
     // 2. Refund Reveal
     // Inputs: ErgoNameCollection, Reveal
     // Data Inputs: None
-    // Outputs: ErgoNameCollection, UserPK, MinerFee, TxOperatorFee
+    // Outputs: ErgoNameCollection, UserPK, MinerFee
     // Context Variables: None
 
     // ===== Compile Time Constants ($) ===== //
@@ -72,6 +72,8 @@
     val ergonameBytes: Coll[Byte] = revealData._2._1(0)
     val commitSecret: Coll[Byte] = revealData._2._1(1)
     val commitBoxId: Coll[Byte] = revealData._2._1(2)
+    val imageDataHash: Coll[Byte] = revealData._2._1(3)
+    val rawSvg: Coll[Byte] = revealData._2._1(4)
     val minerFee: Long = revealData._2._2(0)
     val txOperatorFee: Long = revealData._2._2(1)
     val minBoxValue: Long = revealData._2._2(2)
@@ -105,7 +107,7 @@
 
                 val validCollection: Boolean = ($ergoNameCollectionTokenId == _ergoNameCollectionIssuerBox.id)
                 val validSelection: Boolean = (artworkCollectionTokenId == $ergoNameCollectionTokenId)
-                val validExistence: Boolean = (collectionTokenId, 1L) == (artworkCollectionTokenId, 1L)
+                val validExistence: Boolean = (collectionTokenId == artworkCollectionTokenId)
 
                 allOf(Coll(
                     validCollection,
@@ -135,6 +137,7 @@
 
                 allOf(Coll(
                     (commitBoxIn.id == commitBoxId),
+                    (blake2b256(commitBoxIn.propositionBytes) == $commitContractBytesHash),
                     (commitBoxIn.R5[GroupElement].get == userPKGroupElement)
                 ))
 
@@ -158,7 +161,8 @@
 
                 allOf(Coll(
                     (txOperatorFeeBoxOut.value == txOperatorFee),
-                    (txOperatorFee == commitBoxIn.value)
+                    (txOperatorFee == commitBoxIn.value),
+                    (txOperatorFeeBoxOut.tokens.size == 0)
                 ))
 
             }
@@ -227,11 +231,17 @@
 
             }
 
+            val validSize: Boolean = {
+                (OUTPUTS.size == 3) &&
+                (INPUTS.size == 2)
+            }
+
             allOf(Coll(
                 onlyOne,
                 validErgoNameCollection,
                 validUser,
-                validMinerFee
+                validMinerFee,
+                validSize
             ))
 
         }
