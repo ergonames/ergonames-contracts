@@ -87,7 +87,8 @@
 
             allOf(Coll(
                 onlyOne,
-                validRegistry
+                validRegistry,
+                (SELF.tokens.size == 0) // Force refund if there are extra tokens in this box by accident. This is needed for the mint to ensure extra tokens are not stolen.
             ))
 
         }

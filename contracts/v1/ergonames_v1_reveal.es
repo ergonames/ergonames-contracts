@@ -80,7 +80,6 @@
     val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
     val collectionTokenId: Coll[Byte] = SELF.tokens(0)._1
     val artworkCollectionTokenId: Coll[Byte] = SELF.R7[Coll[Byte]].get
-    val isPayingWithToken: Boolean = (SELF.tokens.size > 1)
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -176,7 +175,8 @@
                 validErgonameIssuanceAmount,
                 validMinerFeeBoxOut,
                 validTxOperatorFeeBoxOut,
-                (OUTPUTS.size == 5)
+                (OUTPUTS.size == 5),
+                (SELF.tokens.size == 1) // Force refund if there are extra tokens in this box by accident. This is needed for the mint to ensure extra tokens are not stolen.
             ))
 
         }
@@ -203,20 +203,12 @@
             val validUser: Boolean = {
 
                 val propAndBox: (SigmaProp, Box) = (userPKSigmaProp, userPKBoxOut)
-                val validPaymentTokenTransfer: Boolean = {
-
-                    if (isPayingWithToken) {
-                        userPKBoxOut.tokens == SELF.tokens.slice(1, SELF.tokens.size)
-                    } else {
-                        userPKBoxOut.tokens.size == 0
-                    }
-
-                } 
+                val validTokenTransfer: Boolean = (userPKBoxOut.tokens == SELF.tokens.slice(1, SELF.tokens.size)) // True if there is payment token or other tokens by accident which cause mint failure.
 
                 allOf(Coll(
                     (userPKBoxOut.value == SELF.value - minerFee),
                     isSigmaPropEqualToBoxProp(propAndBox),
-                    validPaymentTokenTransfer
+                    validTokenTransfer
                 ))
 
             }

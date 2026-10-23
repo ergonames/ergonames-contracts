@@ -26,7 +26,6 @@
     // $revealContractBytesHash: Coll[Byte]
     // $commitContractBytesHash: Coll[Byte]
     // $ergoNameFeeContractBytesHash: Coll[Byte]
-    // $configSingletonTokenId: Coll[Byte]
     // $usdV2OracleSingletonTokenId: Coll[Byte]
     // $registryUpdateNFT: Coll[Byte]
 
@@ -107,6 +106,8 @@
     val priceMap: Coll[BigInt]              = SELF.R7[Coll[BigInt]].get // Price in cents.
     val minCommitBoxAge: Int                = ageThreshold._1
     val maxCommitBoxAge: Int                = ageThreshold._2
+    val maxNameLength = 20
+    val maxSvgBytes = 2000
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -143,6 +144,7 @@
             val commitSecret: Coll[Byte]                                        = revealData._2._1(1)
             val commitBoxId: Coll[Byte]                                         = revealData._2._1(2)
             val imageDataHash: Coll[Byte]                                       = revealData._2._1(3)
+            val rawSvg: Coll[Byte]                                              = revealData._2._1(4)
             val minerFee: Long                                                  = revealData._2._2(0)
             val txOperatorFee: Long                                             = revealData._2._2(1)
             val minBoxValue: Long                                               = revealData._2._2(2)
@@ -153,6 +155,7 @@
 
                 allOf(Coll(
                     (ergoNameBytes.size > 0),
+                    (ergoNameBytes.size <= maxNameLength),
                     isValidAscii(ergoNameBytes)
                 ))
 
@@ -170,9 +173,12 @@
             val validCommit: Boolean = {
 
                 val calculatedHash: Coll[Byte] = blake2b256(
+                    longToByteArray(1L) ++
                     commitSecret ++
                     receiverPKSigmaProp.propBytes ++
-                    ergoNameBytes
+                    longToByteArray(ergoNameBytes.size.toLong) ++
+                    ergoNameBytes ++
+                    imageDataHash
                 )
 
                 val validCommitAge: Boolean         = (commitAge >= minCommitBoxAge) && (commitAge <= maxCommitBoxAge)
@@ -244,22 +250,33 @@
                     val zeroDecimals = fromBase16("30") // "0"
                     val pictureArtworkNFT = fromBase16("0101") // Coll(1, 1)
                     val svgPrefix = fromBase16("646174613a696d6167652f7376672b786d6c3b6261736536342c") // "data:image/svg+xml;base64,
-
+                    val rawSvgPrefix = fromBase16("3c737667")
 
                     val expectedName = namePrefix ++ ergoNameBytes
                     val expectedDescription = descriptionPrefix ++ ergoNameBytes
 
-                    allOf(Coll(
-                        (ergoNameIssuanceBoxOut.R4[Coll[Byte]].get == expectedName),
-                        (ergoNameIssuanceBoxOut.R5[Coll[Byte]].get == expectedDescription),
-                        (ergoNameIssuanceBoxOut.R6[Coll[Byte]].get == zeroDecimals),
-                        (ergoNameIssuanceBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
-                        (ergoNameIssuanceBoxOut.R8[Coll[Byte]].get.size == 32), // Hash size.
-                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].isDefined),      // There will be link to display image in wallets, e.g. Nautilus.
-                        (ergoNameIssuanceBoxOut.R9[Coll[Byte]].get.slice(0, 26) == svgPrefix), // Enforce svg as best we can.
-                        (blake2b256(ergoNameIssuanceBoxOut.R8[Coll[Byte]].get ++ ergoNameIssuanceBoxOut.R9[Coll[Byte]].get) == imageDataHash) // Ensure no malformed image.
-                    ))
+                    val r8 = sha256(rawSvg)
+                    val r9Exists = ergoNameIssuanceBoxOut.R9[Coll[Byte]].isDefined
 
+                    if (r9Exists) {    
+                        val r9 = ergoNameIssuanceBoxOut.R9[Coll[Byte]].get
+                        allOf(Coll(
+                            (ergoNameIssuanceBoxOut.R4[Coll[Byte]].get == expectedName),
+                            (ergoNameIssuanceBoxOut.R5[Coll[Byte]].get == expectedDescription),
+                            (ergoNameIssuanceBoxOut.R6[Coll[Byte]].get == zeroDecimals),
+                            (ergoNameIssuanceBoxOut.R7[Coll[Byte]].get == pictureArtworkNFT),
+                            (ergoNameIssuanceBoxOut.R8[Coll[Byte]].get == r8),
+                            (r8.size == 32), // Hash size.
+                            (r9.slice(0, 26) == svgPrefix), // Enforce svg as best we can.
+                            (blake2b256(r8 ++ r9) == imageDataHash), // Ensure no malformed image.
+                            (rawSvg.size > 0),
+                            (rawSvg.size <= maxSvgBytes),
+                            (rawSvg.slice(0,4) == rawSvgPrefix)
+                        ))
+
+                    } else {
+                        false
+                    }
                 }
 
                 allOf(Coll(
@@ -320,7 +337,7 @@
                 val nanoErgPerUsd: Long                         = usdV2OracleDatapoint.R4[Long].get / 100L // Price is now in cents.
                 val charsAndMap: (Coll[Byte], Coll[BigInt])     = (ergoNameBytes, priceMap)
                 val price: BigInt                               = calcUsdPrice(charsAndMap) // USD Price in cents.
-                val equivalentNanoErg: BigInt                   = (nanoErgPerUsd * price)
+                val ergonameFee: BigInt                         = (nanoErgPerUsd * price)
                 
                 val validUsdOracle: Boolean                     = (usdV2OracleDatapoint.tokens(0)._1 == $usdV2OracleSingletonTokenId)
                 val validFeeAddress: Boolean                    = (blake2b256(ergoNameFeeBoxOut.propositionBytes) == $ergoNameFeeContractBytesHash)
@@ -329,19 +346,19 @@
 
                     val validFeePayment: Boolean = {
 
-                        val maxPrice: BigInt    = revealBoxIn.value.toBigInt - minerFeeBoxOut.value - minBoxValue // Reveal box contains minerFee + subNameRegistry + minBox + maxPayment
-                        val quotePrice: BigInt  = (maxPrice * 100.toBigInt) / 105.toBigInt 
-                        val minPrice: BigInt    = (quotePrice * 95.toBigInt) / 100.toBigInt
-                        val isWithin: Boolean   = (equivalentNanoErg >= minPrice) && (equivalentNanoErg <= maxPrice)
-                        
-                        val validFee: Boolean     = (ergoNameFeeBoxOut.value.toBigInt >= equivalentNanoErg)
-                        val validChange: Boolean  = (ergoNameIssuanceBoxOut.value.toBigInt >= (maxPrice + minBoxValue.toBigInt - equivalentNanoErg)) // Ensures that the user gets money back, or if equivalentNanoErg is the max price then the issuance box is the min box value. 
+                        val maxPrice: BigInt = revealBoxIn.value.toBigInt - minerFeetoBigInt - minBoxValue.toBigInt // Reveal box contains minerFee + minBox + maxPayment
+                        val change: BigInt = maxPrice + minBoxValue.toBigInt - ergonameFee
+                        // val quotePrice: BigInt  = (maxPrice * 100.toBigInt) / 105.toBigInt 
+                        // val minPrice: BigInt    = (quotePrice * 95.toBigInt) / 100.toBigInt
+                        // val isWithin: Boolean   = (equivalentNanoErg >= minPrice) && (equivalentNanoErg <= maxPrice)
+                        val validFee: Boolean = {
+                            (ergonameFee <= maxPrice) &&
+                            (ergoNameFeeBoxOut.value.toBigInt == ergonameFee)
+                        } 
+                        val validChange: Boolean = (ergoNameIssuanceBoxOut.value.toBigInt == change) // Ensures that the user gets money back, or if equivalentNanoErg is the max price then the issuance box is the min box value. 
 
-                        allOf(Coll(
-                            isWithin,
-                            validFee,
-                            validChange
-                        ))
+                        validFee &&
+                        validChange
                         
                     }
 

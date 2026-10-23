@@ -46,6 +46,7 @@
     val minMinerFee: Long = 1000000L
     val maxNameLength = 20
     val maxSvgBytes = 2000
+    val rawSvgPrefix = fromBase16("3c737667")
 
     val _action: Int = if (getVar[Int](0).isDefined) getVar[Int](0).get else 0
 
@@ -128,7 +129,7 @@
                             (secrets(3).size == 32) &&
                             (secrets(4).size > 0) &&
                             (secrets(4).size <= maxSvgBytes) &&
-                            (secrets(4).slice(0,4) == fromBase16("3c737667")) && // raw svg prefix
+                            (secrets(4).slice(0,4) == rawSvgPrefix) &&
                             (secrets(2) == commit.id) &&
                             (secrets(0) == commit.R5[GroupElement].get)
                         }
