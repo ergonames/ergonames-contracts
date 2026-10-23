@@ -346,7 +346,7 @@
 
                     val validFeePayment: Boolean = {
 
-                        val maxPrice: BigInt = revealBoxIn.value.toBigInt - minerFeetoBigInt - minBoxValue.toBigInt // Reveal box contains minerFee + minBox + maxPayment
+                        val maxPrice: BigInt = revealBoxIn.value.toBigInt - minerFee.toBigInt - minBoxValue.toBigInt // Reveal box contains minerFee + minBox + maxPayment
                         val change: BigInt = maxPrice + minBoxValue.toBigInt - ergonameFee
                         // val quotePrice: BigInt  = (maxPrice * 100.toBigInt) / 105.toBigInt 
                         // val minPrice: BigInt    = (quotePrice * 95.toBigInt) / 100.toBigInt

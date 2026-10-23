@@ -44,6 +44,7 @@
     val collectionTokenAmount: Long     = SELF.tokens(1)._2
     val minTxOperatorFee: Long = 2000000L
     val minMinerFee: Long = 1000000L
+    val minBoxValue: Long = 1000000L
     val maxNameLength = 20
     val maxSvgBytes = 2000
     val rawSvgPrefix = fromBase16("3c737667")
@@ -52,139 +53,152 @@
 
     if (_action == 1) {
 
-        // Data-Inputs
-        val commit: Box = CONTEXT.dataInputs(0)
+        val validRevealTx: Boolean = {
 
-        // Outputs
-        val ergonameCollectionBoxOut: Box = OUTPUTS(0)
-        val revealBoxOut: Box = OUTPUTS(1)
-        val minerFeeBoxOut: Box = OUTPUTS(2)
+            // Data-Inputs
+            val commit: Box = CONTEXT.dataInputs(0)
 
-        val onlyOne = (INPUTS(0).id == SELF.id)
+            // Inputs
+            val userIn: Box = INPUTS(1)
 
-        val validSelfRecreation: Boolean = {
+            // Outputs
+            val ergonameCollectionBoxOut: Box = OUTPUTS(0)
+            val revealBoxOut: Box = OUTPUTS(1)
+            val minerFeeBoxOut: Box = OUTPUTS(2)
 
-            allOf(Coll(
-                (ergonameCollectionBoxOut.value == SELF.value),
-                (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
-                (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
-                (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, collectionTokenAmount - 1L))
-            ))
+            val onlyOne = (INPUTS(0).id == SELF.id)
 
-        }
+            val validSelfRecreation: Boolean = {
 
-        val validCommit: Boolean = (blake2b256(commit.propositionBytes) == $commitContractBytesHash)
-
-        val validReveal: Boolean = {
-
-            val validEIP24Registers: Boolean = {
-
-                // Ensure royalty must be programmatically enforced.
-                val validRoyalty: Boolean = {
-                    if (revealBoxOut.R5[Coll[(Coll[Byte], Int)]].get.size == 1) {
-                        val royalties = revealBoxOut.R5[Coll[(Coll[Byte], Int)]].get
-                        val royalty = royalties(0)
-                        allOf(Coll(
-                            (blake2b256(royalty._1) == $ergoNameFeeContractBytesHash),
-                            (royalty._2 == 25)
-                        ))
-                    } else {
-                        false
-                    }
-                }
-
-                val emptyR6 = (Coll[(Coll[Byte], Coll[Byte])](), (Coll[(Coll[Byte], (Int, Int))](), Coll[(Coll[Byte], (Int, Int))]()))
-                val emptyR8 = Coll[(Coll[Byte], Coll[Byte])]()
                 allOf(Coll(
-                    (revealBoxOut.R4[Int].get == 2),
-                    validRoyalty,
-                    (revealBoxOut.R6[(Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))].get == emptyR6),
-                    (revealBoxOut.R7[Coll[Byte]].get == collectionTokenId),
-                    (revealBoxOut.R8[Coll[(Coll[Byte], Coll[Byte])]].get == emptyR8)
+                    (ergonameCollectionBoxOut.value == SELF.value),
+                    (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
+                    (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
+                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, collectionTokenAmount - 1L))
                 ))
 
             }
 
-            val validR9Data: Boolean = {
-                if (revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].isDefined) {
-                    
-                    val data = revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
-                    val fees = data._2._2
-                    val secrets = data._2._1
-                    if (fees.size == 3 && secrets.size == 5) {
+            val validCommit: Boolean = {
+                (blake2b256(commit.propositionBytes) == $commitContractBytesHash) &&
+                (commit.tokens.size == 0) // Fail early and force refund.
+            }
+
+            val validReveal: Boolean = {
+
+                val validEIP24Registers: Boolean = {
+
+                    // Ensure royalty must be programmatically enforced.
+                    val validRoyalty: Boolean = {
+                        if (revealBoxOut.R5[Coll[(Coll[Byte], Int)]].get.size == 1) {
+                            val royalties = revealBoxOut.R5[Coll[(Coll[Byte], Int)]].get
+                            val royalty = royalties(0)
+                            allOf(Coll(
+                                (blake2b256(royalty._1) == $ergoNameFeeContractBytesHash),
+                                (royalty._2 == 25)
+                            ))
+                        } else {
+                            false
+                        }
+                    }
+
+                    val emptyR6 = (Coll[(Coll[Byte], Coll[Byte])](), (Coll[(Coll[Byte], (Int, Int))](), Coll[(Coll[Byte], (Int, Int))]()))
+                    val emptyR8 = Coll[(Coll[Byte], Coll[Byte])]()
+                    allOf(Coll(
+                        (revealBoxOut.R4[Int].get == 2),
+                        validRoyalty,
+                        (revealBoxOut.R6[(Coll[(Coll[Byte], Coll[Byte])], (Coll[(Coll[Byte], (Int, Int))], Coll[(Coll[Byte], (Int, Int))]))].get == emptyR6),
+                        (revealBoxOut.R7[Coll[Byte]].get == collectionTokenId),
+                        (revealBoxOut.R8[Coll[(Coll[Byte], Coll[Byte])]].get == emptyR8)
+                    ))
+
+                }
+
+                val validR9Data: Boolean = {
+                    if (revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].isDefined) {
                         
-                        val validFees = {
-                            (fees(0) >= minMinerFee) &&
-                            (fees(1) >= minTxOperatorFee) &&
-                            (fees(2) >= minBoxValue) && // Enough to leave it at this since with 360 nanoERG per byte, 0.01 ERG implies ~2.7 kB, which is way more than expected.
-                            (fees(1) == commit.value) &&
-                            (revealBoxOut.value > fees(0) + fees(2)) // The remaining amount is the ergoname cost.
-                        }
+                        val data = revealBoxOut.R9[(GroupElement, (Coll[Coll[Byte]], Coll[Long]))].get
+                        val user = data._1
+                        val fees = data._2._2
+                        val secrets = data._2._1
+                        if (fees.size == 3 && secrets.size == 5) {
+                            
+                            val validFees = {
+                                (fees(0) >= minMinerFee) &&
+                                (fees(1) >= minTxOperatorFee) &&
+                                (fees(2) >= minBoxValue) && // Enough to leave it at this since with 360 nanoERG per byte, 0.01 ERG implies ~2.7 kB, which is way more than expected.
+                                (fees(1) == commit.value) &&
+                                (revealBoxOut.value > fees(0) + fees(2)) // The remaining amount is the ergoname cost.
+                            }
 
-                        val validSecrets = {
-                            (secrets(0).size > 0) &&
-                            (secrets(0).size <= maxNameLength) &&
-                            (secrets(1).size == 32) &&
-                            (secrets(2).size == 32) &&
-                            (secrets(3).size == 32) &&
-                            (secrets(4).size > 0) &&
-                            (secrets(4).size <= maxSvgBytes) &&
-                            (secrets(4).slice(0,4) == rawSvgPrefix) &&
-                            (secrets(2) == commit.id) &&
-                            (secrets(0) == commit.R5[GroupElement].get)
-                        }
+                            val validSecrets = {
+                                (secrets(0).size > 0) &&
+                                (secrets(0).size <= maxNameLength) &&
+                                (secrets(1).size == 32) &&
+                                (secrets(2).size == 32) &&
+                                (secrets(3).size == 32) &&
+                                (secrets(4).size > 0) &&
+                                (secrets(4).size <= maxSvgBytes) &&
+                                (secrets(4).slice(0,4) == rawSvgPrefix) &&
+                                (secrets(2) == commit.id) &&
+                                (user == commit.R5[GroupElement].get)
+                            }
 
-                        val validCommitHash = {
-                            commit.R4[Coll[Byte]].get == blake2b256(
-                                longToByteArray(1L) ++                      // version
-                                secrets(1) ++                               // commit secret
-                                proveDlog(secrets(0)).propBytes ++          // user pk proposition bytes
-                                longToByteArray(secrets(0).size.toLong) ++  // ergoname length
-                                secrets(0) ++                               // ergoname
-                                secrets(3)                                  // image data hash
-                            )
-                        }
+                            val validCommitHash = {
+                                commit.R4[Coll[Byte]].get == blake2b256(
+                                    longToByteArray(1L) ++                      // version
+                                    secrets(1) ++                               // commit secret
+                                    proveDlog(user).propBytes ++          // user pk proposition bytes
+                                    longToByteArray(secrets(0).size.toLong) ++  // ergoname length
+                                    secrets(0) ++                               // ergoname
+                                    secrets(3)                                  // image data hash
+                                )
+                            }
 
-                        allOf(Coll(
-                            validFees,
-                            validSecrets,
-                            validCommitHash
-                        ))
+                            allOf(Coll(
+                                validFees,
+                                validSecrets,
+                                validCommitHash
+                            ))
+                        } else {
+                            false
+                        }
                     } else {
                         false
                     }
-                } else {
-                    false
                 }
+
+                allOf(Coll(
+                    (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
+                    (revealBoxOut.tokens(0) == (collectionTokenId, 1L)),
+                    (revealBoxOut.tokens.size == 1),
+                    validEIP24Registers,
+                    validR9Data
+                ))
+
             }
 
-            allOf(Coll(
-                (blake2b256(revealBoxOut.propositionBytes) == $revealErgoTreeBytesHash),
-                (revealBoxOut.tokens(0) == (collectionTokenId, 1L)),
-                validEIP24Registers,
-                validR9Data
-            ))
+            val validMiner: Boolean = {
+                minerFeeBoxOut.value >= minMinerFee &&
+                blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash &&
+                minerFeeBoxOut.tokens.size == 0
+            }
 
-        }
+            val validUser: Boolean = (userIn.propositionBytes == proveDlog(commit.R5[GroupElement].get).propBytes)
 
-        val validMiner: Boolean = {
-            minerFeeBoxOut.value >= minMinerFee &&
-            blake2b256(minerFeeBoxOut.propositionBytes) == minerFeeErgoTreeHash &&
-            minerFeeBoxOut.tokens.size == 0
-        }
-
-        val validRevealTx = {
             allOf(Coll(
                 onlyOne,
                 validSelfRecreation,
                 validCommit,
-                validRevealProxy,
                 validReveal,
-                validMiner
+                validMiner,
+                validUser,
+                (CONTEXT.dataInputs.size == 1)
             ))
+
         }
 
-        sigmaProp(validRevealTx) && proveDlog(commit.R5[GroupElement].get)
+        sigmaProp(validRevealTx)
 
     } else if (_action == 2) {
 

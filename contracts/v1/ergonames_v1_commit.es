@@ -62,6 +62,7 @@
     val userPKGroupElement: GroupElement = SELF.R5[GroupElement].get
     val userPKSigmaProp: SigmaProp = proveDlog(userPKGroupElement)
     val minerFee: Long = 1000000L
+    val minTxOperatorFee: Long = 2000000L
     val creationHeight: Int = SELF.creationInfo._1
     val isOldEnough: Boolean = HEIGHT - creationHeight >= $maxCommitBoxAge
 
@@ -88,6 +89,7 @@
             allOf(Coll(
                 onlyOne,
                 validRegistry,
+                (SELF.value >= minTxOperatorFee),
                 (SELF.tokens.size == 0) // Force refund if there are extra tokens in this box by accident. This is needed for the mint to ensure extra tokens are not stolen.
             ))
 
@@ -130,7 +132,7 @@
 
             val validSize: Boolean = {
                 (OUTPUTS.size == 2) &&
-                (INPUTS.size == 1)
+                (INPUTS.size >= 1)
             }
 
             allOf(Coll(
