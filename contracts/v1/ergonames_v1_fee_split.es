@@ -51,9 +51,9 @@
             val totalIn: Long = INPUTS.fold(0L, { (sum: Long, box: Box) =>
                 if (box.propositionBytes == SELF.propositionBytes) sum + box.value else sum
             })
+            val distributable: Long = totalIn - miner_fee
 
             val minerFeeBoxOut: Box = OUTPUTS(recipientCount)
-            val distributable: Long = totalIn - minerFeeBoxOut.value
 
             val indices: Coll[Int] = addresses.indices
 
@@ -77,6 +77,7 @@
                 ))
             }
 
+            (distributable > 0)
             validRecipients &&
             validMsigRecipient && 
             validMinerFee
