@@ -186,7 +186,7 @@
             }
 
             val validUser: Boolean = {
-                val checkIn = (userIn.propositionBytes == proveDlog(commit.R5[GroupElement].get).propBytes) &&
+                val checkIn = (userIn.propositionBytes == proveDlog(commit.R5[GroupElement].get).propBytes)
                 val checkOut = {
                     if (OUTPUTS.size == 4) {
                         val userOut = OUTPUTS(3)
@@ -208,7 +208,7 @@
                 validMiner,
                 validUser,
                 (CONTEXT.dataInputs.size == 1),
-                (INPUTS.size == 2)  // Everything in one user input.
+                (INPUTS.size == 2),  // Everything in one user input.
                 (OUTPUTS.size <= 4) // No random outputs.
             ))
 
