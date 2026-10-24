@@ -67,7 +67,7 @@
             val validMsigRecipient: Boolean = {
                 val out: Box = OUTPUTS(4)
                 val owed: Long = (distributable * shares(4)) / 1000L
-                (blake2b256(out.propositionBytes) == multisigErgoTreeHash)
+                (blake2b256(out.propositionBytes) == multisigErgoTreeHash) && (out.value >= owed)
             }
 
             val validMinerFee: Boolean = {
