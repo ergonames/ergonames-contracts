@@ -20,7 +20,7 @@
     // Context Variables: 
 
     // ===== Compile Time Constants ($) ===== //
-    // None.
+    // None
 
     // ===== Context Variables (_) ===== //
     // _action: Int
@@ -28,14 +28,13 @@
     // ===== User Defined Functions ===== //
     // None
 
+    val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
+    val multisigErgoTreeHash: Coll[Byte] = fromBase16("9b17f3d89673488ce95e049f551712b755b5575cbbc4b818f4bc7342b7f7b95c")
     val adoo = PK("9iJV2D1gzvWeBbSXHPgTai3S41CjoBBodxMB9DB2Dwt1kaRA9z2")
     val lgd = PK("9hdYFtdV8JLXJho4wAzy6dB6DHQn4gvZsmf4vf1kbkggJ59Wn3Z")
     val balb = PK("9gCJDv78SUUes6sNo81KqbP4yu3vHU6GtcatvmySiBsRoU1k4T8")
     val mgpai = PK("9g5yzitxX53B4RVi1DHLjrMx7iwTQn38kLG2XVVkhvHvcB1TcEz")
-    val msig_addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
-    val min_required_signatures: Int = 2
-    val ergoname_msig_sigmaprop: SigmaProp = atLeast(min_required_signatures, msig_addresses)
-    val addresses: Coll[SigmaProp] = msig_addresses.append(Coll(ergoname_msig_sigmaprop))
+    val addresses: Coll[SigmaProp] = Coll(adoo, lgd, balb, mgpai)
 
     val shares: Coll[Long] = Coll(500L, 200L, 100L, 50L, 150L)
     val recipientCount: Int = addresses.size
@@ -65,7 +64,12 @@
                 (out.propositionBytes == address.propBytes) && (out.value >= owed)
             }
 
-            val minerFeeErgoTreeHash: Coll[Byte] = fromBase16("e540cceffd3b8dd0f401193576cc413467039695969427df94454193dddfb375")
+            val validMsigRecipient: Boolean = {
+                val out: Box = OUTPUTS(4)
+                val owed: Long = (distributable * shares(4)) / 1000L
+                (blake2b256(out.propositionBytes) == multisigErgoTreeBytesHash)
+            }
+
             val validMinerFee: Boolean = {
                 allOf(Coll(
                     (minerFeeBoxOut.value == miner_fee),
@@ -73,7 +77,9 @@
                 ))
             }
 
-            (validRecipients && validMinerFee)
+            validRecipients &&
+            validMsigRecipient && 
+            validMinerFee
 
         }
 
