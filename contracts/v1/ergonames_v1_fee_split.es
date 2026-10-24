@@ -53,7 +53,7 @@
             })
             val distributable: Long = totalIn - miner_fee
 
-            val minerFeeBoxOut: Box = OUTPUTS(recipientCount)
+            val minerFeeBoxOut: Box = OUTPUTS(recipientCount+1)
 
             val indices: Coll[Int] = addresses.indices
 
