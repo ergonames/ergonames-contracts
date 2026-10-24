@@ -74,7 +74,8 @@
                     (ergonameCollectionBoxOut.value == SELF.value),
                     (ergonameCollectionBoxOut.propositionBytes == SELF.propositionBytes),
                     (ergonameCollectionBoxOut.tokens(0) == SELF.tokens(0)),
-                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, collectionTokenAmount - 1L))
+                    (ergonameCollectionBoxOut.tokens(1) == (collectionTokenId, collectionTokenAmount - 1L)),
+                    (ergonameCollectionBoxOut.tokens.size == 2)
                 ))
 
             }
@@ -184,7 +185,20 @@
                 minerFeeBoxOut.tokens.size == 0
             }
 
-            val validUser: Boolean = (userIn.propositionBytes == proveDlog(commit.R5[GroupElement].get).propBytes)
+            val validUser: Boolean = {
+                val checkIn = (userIn.propositionBytes == proveDlog(commit.R5[GroupElement].get).propBytes) &&
+                val checkOut = {
+                    if (OUTPUTS.size == 4) {
+                        val userOut = OUTPUTS(3)
+                        (userOut.propositionBytes == userIn.propositionBytes) &&
+                        (userOut.tokens == userIn.tokens) // No token burning.
+                    } else {
+                        true
+                    }
+                }
+                checkIn &&
+                checkOut // Checking for change output.
+            }
 
             allOf(Coll(
                 onlyOne,
@@ -193,7 +207,9 @@
                 validReveal,
                 validMiner,
                 validUser,
-                (CONTEXT.dataInputs.size == 1)
+                (CONTEXT.dataInputs.size == 1),
+                (INPUTS.size == 2)  // Everything in one user input.
+                (OUTPUTS.size <= 4) // No random outputs.
             ))
 
         }
