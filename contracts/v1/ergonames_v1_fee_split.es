@@ -4,7 +4,7 @@
     // Description: Accumulates ErgoName minting fees, spendable only by a
     //              distribution transaction that pays every configured
     //              recipient at least its per-mille share of the distributed
-    //              value, or by the multisig escape hatch.
+    //              value.
     // Version: 1.0.0
     // Author: Luca D'Angelo (ldgaetano@protonmail.com)
 

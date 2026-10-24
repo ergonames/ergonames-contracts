@@ -3,7 +3,7 @@
   // Name: ErgoNames Update Contract
   // Description: Contract allowing for contract updates.
   // Version: 1.0.0
-  // Author: Taken from SigUSD/Dexy.
+  // Author: Modified from SigUSD/Dexy.
 
   // ===== Box Contents ===== //
   // Tokens
