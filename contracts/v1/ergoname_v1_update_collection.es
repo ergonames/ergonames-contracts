@@ -45,7 +45,7 @@
   val contractToUpdateBoxOut = OUTPUTS(1) // copy of contract to update box is the 2nd output
 
   // compute the hash of the contract to update output box. This should be the value voted for
-  val contractToUpdateBoxOutHash = blake2b256(contractToUpdateBoxOut.propositionBytes)
+  val updateBoxOutHash = blake2b256(contractToUpdateBoxOut.bytesWithoutRef)
 
   val validContractToUpdateIn = 
     (contractToUpdateBoxIn.tokens.size >= 1) && 
@@ -66,7 +66,7 @@
     (b.tokens.size > 0) &&
     (b.tokens(0)._1 == voteTokenId) &&
     (b.R5[Coll[Byte]].get == SELF.id) && // ensure vote corresponds to this box
-    (b.R6[Coll[Byte]].get == contractToUpdateBoxOutHash) // check value voted for
+    (b.R6[Coll[Byte]].get == updateBoxOutHash) // check value voted for
   }
 
   val voteBoxes = INPUTS.filter(isValidVote)
